@@ -12,10 +12,11 @@ while (url) {
     uri.path = next_path
     headers.'User-Agent' = 'Mozilla/5.0'
 
-    response.success = { resp, repos ->
+    response.success = { resp, reader ->
     out.println(resp)
     assert resp.status == 200
 
+    def repos = reader
     resp.headers.'Link'.split(',').each {
        out.println(it)
        def m = (it =~ /<https:\/\/api.github.com(\s+)>\S+rel=\"next\"/)
