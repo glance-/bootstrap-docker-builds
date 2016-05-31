@@ -4,19 +4,20 @@ import static groovyx.net.http.ContentType.TEXT
 
   
 def org = 'SUNET'
-def url = "https://api.github.com/orgs/${org}/repos"
-
+def url = "https://api.github.com"
+def api = new HTTPBuilder(url)
+def next_path = "/orgs/${org}/repos"
 while (url) {
-  def api = new HTTPBuilder(url)
   api.request(GET,TEXT) { req ->
+    uri.path = next_path
     response.success = { resp, reader ->
     out.println(resp)
     assert resp.status == 200
 
     resp.headers.'Link'.split(',').each {
-       m = it =~ /<(.+)>\s+rel=\"next\"/ 
+       m = it =~ /<https://api.github.com(.+)>\s+rel=\"next\"/ 
        if (m) {
-          url = m.group(0)
+          next_path = m.group(0)
        }
     }
 
