@@ -4,12 +4,14 @@ import static groovyx.net.http.ContentType.TEXT
 
   
 def org = 'SUNET'
-def url = "https://api.github.com"
+def url = "https://api.github.com/"
 def api = new HTTPBuilder(url)
 def next_path = "/orgs/${org}/repos"
 while (url) {
   api.request(GET,TEXT) { req ->
     uri.path = next_path
+    headers.'User-Agent' = 'Mozilla/5.0'
+
     response.success = { resp, reader ->
     out.println(resp)
     assert resp.status == 200
