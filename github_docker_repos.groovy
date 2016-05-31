@@ -1,5 +1,3 @@
-@Grab(group:'org.codehaus.groovy.modules.http-builder', module:'http-builder', version:'0.6.0')
-
 import groovyx.net.http.*
   
 def org = 'SUNET'
