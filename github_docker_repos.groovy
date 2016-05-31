@@ -1,13 +1,15 @@
 import groovyx.net.http.HTTPBuilder
 import static groovyx.net.http.Method.GET
+import static groovyx.net.http.Method.TEXT
   
 def org = 'SUNET'
 def url = "https://api.github.com/orgs/${org}/repos"
 
 while (url) {
   def api = new HTTPBuilder(url)
-  api.request(GET) { req ->
+  api.request(GET,TEXT) { req ->
     response.success = { resp, reader ->
+    println(resp)
     assert resp.status == 200
 
     resp.headers.'Link'.split(',').each {
