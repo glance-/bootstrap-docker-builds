@@ -9,7 +9,7 @@ while (url) {
   def api = new HTTPBuilder(url)
   api.request(GET,TEXT) { req ->
     response.success = { resp, reader ->
-    println(resp)
+    out.println(resp)
     assert resp.status == 200
 
     resp.headers.'Link'.split(',').each {
