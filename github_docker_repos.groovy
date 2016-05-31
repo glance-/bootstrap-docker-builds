@@ -1,6 +1,7 @@
 import groovyx.net.http.HTTPBuilder
 import static groovyx.net.http.Method.GET
-import static groovyx.net.http.Method.TEXT
+import static groovyx.net.http.ContentType.TEXT
+
   
 def org = 'SUNET'
 def url = "https://api.github.com/orgs/${org}/repos"
