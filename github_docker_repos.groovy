@@ -12,7 +12,7 @@ while (url) {
     uri.path = next_path
     headers.'User-Agent' = 'Mozilla/5.0'
 
-    response.success = { resp, reader ->
+    response.success = { resp, repos ->
     out.println(resp)
     assert resp.status == 200
 
@@ -23,7 +23,6 @@ while (url) {
        }
     }
 
-    def repos = new groovy.json.JsonSlurper().parse(reader)
     repos.each {
       def name = it.name
       out.println("${name}")
