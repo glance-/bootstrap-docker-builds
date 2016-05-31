@@ -15,7 +15,7 @@ while (url) {
     assert resp.status == 200
 
     resp.headers.'Link'.split(',').each {
-       def m = (it =~ /<https://api.github.com(\s+)>\S+rel=\"next\"/)
+       def m = (it =~ /<https:\/\/api.github.com(\s+)>\S+rel=\"next\"/)
        if (m.matches()) {
           next_path = m.group(0)
        }
