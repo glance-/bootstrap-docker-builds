@@ -56,7 +56,7 @@ while (next_path != null) {
                   dockerRegistryURL("https://docker.sunet.se")
                   tag('${BUILD_TIMESTAMP}_${GIT_REVISION,length=7}')
                   forcePull(true)
-                  createFingerprint(true)
+                  createFingerprints(true)
                }
             }
          }
