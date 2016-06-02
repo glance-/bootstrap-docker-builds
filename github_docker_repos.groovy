@@ -4,6 +4,8 @@ import static groovyx.net.http.Method.GET
 import static groovyx.net.http.ContentType.JSON
 import org.ho.yaml.Yaml
 
+def environ = System.getenv()
+out.println(environ)
 def org = 'SUNET'
 def url = "https://api.github.com/"
 def next_path = "/orgs/${org}/repos"
@@ -50,7 +52,6 @@ while (next_path != null) {
       hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
       if (name.contains("docker-satosa")) {
          job(name) {
-            def environ = System.getenv()
             def env = ['slack':['room':'devops']]
             def files = workspace.list()
             if (files.contains('.jenkins.json')) {
