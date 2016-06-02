@@ -48,7 +48,12 @@ while (next_path != null) {
       out.println("${name}")
       if (name.contains("docker-satosa")) {
          job(name) {
-            def env = (new JsonSlurper()).parseText(streamFileFromWorkspace('.jenkins.json'))
+            def env = [:]
+            try {
+               env = (new JsonSlurper()).parseText(streamFileFromWorkspace('.jenkins.json'))
+            } catch (IOException e) {
+
+            }
             scm {
                git("https://github.com/${full_name}.git", "master")
             }
