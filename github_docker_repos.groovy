@@ -22,9 +22,9 @@ while (next_path != null) {
        it = it.trim()
        out.println(it)
        out.println("---")
-       def m = (it =~ /^<https:\/\/api.github.com([^>]+)>;\S+rel="next"$/)
+       def m = (it =~ /<https:\/\/api.github.com([^>]+)>; rel="next"/)
        if (m.matches()) {
-          next_path = m.group(1)
+          next_path = m[0][1]
        }
        out.println(next_path)
     }
