@@ -5,9 +5,9 @@ import static groovyx.net.http.ContentType.JSON
   
 def org = 'SUNET'
 def url = "https://api.github.com/"
-def api = new HTTPBuilder(url)
 def next_path = "/orgs/${org}/repos"
 while (next_path != null) {
+  def api = new HTTPBuilder(url)
   api.request(GET,JSON) { req ->
     uri.path = next_path
     headers.'User-Agent' = 'Mozilla/5.0'
