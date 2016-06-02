@@ -43,6 +43,7 @@ while (next_path != null) {
     repos.each {
       def name = it.name
       def full_name = it.full_name
+      if (name != null && full_name != null) { 
       out.println("${name}")
       if (name.contains("docker-satosa")) {
          job(name) {
@@ -59,6 +60,7 @@ while (next_path != null) {
                }
             }
          }
+      }
       }
     }
   }
