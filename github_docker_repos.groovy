@@ -11,6 +11,7 @@ while (next_path != null) {
   api.request(GET,JSON) { req ->
     uri.path = next_path
     if (next_query != null) {
+       out.println(next_query)
        uri.query = next_query
     }
     headers.'User-Agent' = 'Mozilla/5.0'
