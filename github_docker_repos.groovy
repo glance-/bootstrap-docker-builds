@@ -26,7 +26,7 @@ while (next_path != null) {
        it = it.trim()
        def m = (it =~ /<https:\/\/api.github.com([^>]+)>; rel="next"/)
        if (m.matches()) {
-          def a = m[0][1].split('?')
+          def a = m[0][1].split('\\?')
           next_path = a[0]
           next_query = null
           if (a.length == 2) {
