@@ -5,12 +5,14 @@ import static groovyx.net.http.ContentType.JSON
 def org = 'SUNET'
 def url = "https://api.github.com/"
 def next_path = "/orgs/${org}/repos"
-def next_query = [:]
+def next_query = null
 def api = new HTTPBuilder(url)
 while (next_path != null) {
   api.request(GET,JSON) { req ->
     uri.path = next_path
-    uri.query = next_query
+    if (next_query != null) {
+       uri.query = next_query
+    }
     headers.'User-Agent' = 'Mozilla/5.0'
 
     response.success = { resp, reader ->
@@ -25,8 +27,9 @@ while (next_path != null) {
        if (m.matches()) {
           def a = m[0][1].split('?')
           next_path = a[0]
-          next_query = [:]
+          next_query = null
           if (a.length == 2) {
+             next_query = [:]
              a[1].split('&').each {
                 def av = it.split('=')
                 next_query[av[0]] = av[1]
