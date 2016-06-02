@@ -53,7 +53,7 @@ while (next_path != null) {
             steps {
                dockerBuildAndPublish {
                   repositoryName(full_name)
-                  registry("https://docker.sunet.se")
+                  dockerRegistryURL("https://docker.sunet.se")
                   tag('${BUILD_TIMESTAMP}_${GIT_REVISION,length=7}')
                   forcePull(true)
                   createFingerprint(true)
