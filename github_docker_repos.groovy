@@ -51,7 +51,7 @@ while (next_path != null) {
             def env = [:]
             try {
                env = (new JsonSlurper()).parseText(streamFileFromWorkspace('.jenkins.json'))
-            } catch (IOException e) {
+            } catch (IllegalStateException e) {
 
             }
             scm {
