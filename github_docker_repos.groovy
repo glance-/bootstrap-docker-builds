@@ -46,13 +46,12 @@ while (next_path != null) {
       def full_name = it.full_name.toLowerCase()
       if (name != null && full_name != null) { 
       out.println("${name}")
+      hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
       if (name.contains("docker-satosa")) {
          job(name) {
             def env = [:]
-            try {
+            if (workspace.list().contains('.jenkins.json')) {
                env = (new JsonSlurper()).parseText(streamFileFromWorkspace('.jenkins.json'))
-            } catch (IllegalStateException e) {
-
             }
             scm {
                git("https://github.com/${full_name}.git", "master")
