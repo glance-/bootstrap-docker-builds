@@ -2,6 +2,7 @@ import groovyx.net.http.HTTPBuilder
 import groovy.json.JsonSlurper
 import static groovyx.net.http.Method.GET
 import static groovyx.net.http.ContentType.JSON
+import org.ho.yaml.Yaml
   
 def org = 'SUNET'
 def url = "https://api.github.com/"
@@ -50,8 +51,12 @@ while (next_path != null) {
       if (name.contains("docker-satosa")) {
          job(name) {
             def env = [:]
-            if (workspace.list().contains('.jenkins.json')) {
-               env = (new JsonSlurper()).parseText(streamFileFromWorkspace('.jenkins.json'))
+            def files = workspace.list()
+            if (files.contains('.jenkins.json')) {
+               env << (new JsonSlurper()).parseText(streamFileFromWorkspace('.jenkins.json'))
+            }
+            if (files.contains('.jenkins.yaml')) {
+               env << Yaml.load(streamFileFromWorkspace('.jenkins.yaml'))
             }
             scm {
                git("https://github.com/${full_name}.git", "master")
