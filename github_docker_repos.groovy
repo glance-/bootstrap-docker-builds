@@ -1,7 +1,6 @@
 import groovyx.net.http.HTTPBuilder
 import static groovyx.net.http.Method.GET
 import static groovyx.net.http.ContentType.JSON
-
   
 def org = 'SUNET'
 def url = "https://api.github.com/"
@@ -24,7 +23,7 @@ while (next_path != null) {
        it = it.trim()
        def m = (it =~ /<https:\/\/api.github.com([^>]+)>; rel="next"/)
        if (m.matches()) {
-          def a = m[0][1].split('\?')
+          def a = m[0][1].split('?')
           next_path = a[0]
           next_query = [:]
           if (a.length == 2) {
