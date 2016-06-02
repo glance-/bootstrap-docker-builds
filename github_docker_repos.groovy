@@ -42,11 +42,12 @@ while (next_path != null) {
 
     repos.each {
       def name = it.name
+      def full_name = it.full_name
       out.println("${name}")
       if (name.contains("docker-satosa")) {
          job(name) {
             scm {
-               git("https://github.com/${it.fullName}.git", "master")
+               git("https://github.com/${full_name}.git", "master")
             }
             steps {
                dockerBuildAndPublish {
