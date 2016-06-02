@@ -50,7 +50,7 @@ while (next_path != null) {
       hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
       if (name.contains("docker-satosa")) {
          job(name) {
-            def env = ['slack_room':'devops']
+            def env = ['slack':['room':'devops']]
             def files = workspace.list()
             if (files.contains('.jenkins.json')) {
                env << (new JsonSlurper()).parseText(streamFileFromWorkspace('.jenkins.json'))
@@ -71,7 +71,7 @@ while (next_path != null) {
                slackNotifier {
                   teamDomain('SUNET')
                   authToken('${SLACK_TOKEN}')
-                  room(env['slack_room'])
+                  room(env.slack.room)
                   notifyAborted(true)
                   notifyFailure(true)
                   notifyNotBuilt(true)
@@ -82,6 +82,7 @@ while (next_path != null) {
                   startNotification(false)
                   includeTestSummary(false)
                   includeCustomMessage(false)
+                  customMessage(env.slack.custom_message)
                   buildServerUrl("https://ci.sunet.se")
                   commitInfoChoice('NONE')
                }
