@@ -85,6 +85,7 @@ while (next_path != null) {
                   customMessage(env.slack.custom_message)
                   buildServerUrl("https://ci.sunet.se")
                   commitInfoChoice('NONE')
+                  sendAs(slack.sendas)
                }
                if (env['jabber'] != null) {
                   publishJabber(env['jabber']) {
