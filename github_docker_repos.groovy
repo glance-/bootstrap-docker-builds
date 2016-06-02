@@ -47,8 +47,26 @@ while (next_path != null) {
       out.println("${name}")
       if (name.contains("docker-satosa")) {
          job(name) {
+            def env = JsonSlurper().parse(streamFileFromWorkspace('.jenkins.json'))
             scm {
                git("https://github.com/${full_name}.git", "master")
+            }
+            triggers {
+               githubPush()
+               if (env['schedule'] != null) {
+                  cron(env['schedule'])
+               }
+            }
+            publishers {
+               slackNotifier {
+                  teamDomain('SUNET')
+                  room('devops')
+               }
+               if (env['jabber'] != null) {
+                  publishJabber(env['jabber'] {
+                     strategyName('ANY_FAILURE')
+                  }
+               }
             }
             steps {
                dockerBuildAndPublish {
