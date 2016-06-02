@@ -3,7 +3,7 @@ import groovy.json.JsonSlurper
 import static groovyx.net.http.Method.GET
 import static groovyx.net.http.ContentType.JSON
 import org.ho.yaml.Yaml
-  
+
 def org = 'SUNET'
 def url = "https://api.github.com/"
 def next_path = "/orgs/${org}/repos"
@@ -68,12 +68,11 @@ while (next_path != null) {
                }
             }
             publishers {
-               /*
                slackNotifier {
                   teamDomain('SUNET')
+                  authToken('${SLACK_TOKEN}')
                   room('devops')
                }
-               */
                if (env['jabber'] != null) {
                   publishJabber(env['jabber']) {
                      strategyName('ANY_FAILURE')
