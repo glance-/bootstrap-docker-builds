@@ -4,8 +4,6 @@ import static groovyx.net.http.Method.GET
 import static groovyx.net.http.ContentType.JSON
 import org.ho.yaml.Yaml
 
-def environ = System.getenv()
-out.println(environ)
 def org = 'SUNET'
 def url = "https://api.github.com/"
 def next_path = "/orgs/${org}/repos"
@@ -72,7 +70,7 @@ while (next_path != null) {
             publishers {
                slackNotifier {
                   teamDomain('SUNET')
-                  authToken(environ['SLACK_TOKEN'])
+                  authToken("${SLACK_TOKEN}")
                   room(env.slack.room)
                   notifyAborted(true)
                   notifyFailure(true)
