@@ -42,7 +42,7 @@ while (next_path != null) {
 
     repos.each {
       def name = it.name
-      def full_name = it.full_name
+      def full_name = it.full_name.toLower()
       if (name != null && full_name != null) { 
       out.println("${name}")
       if (name.contains("docker-satosa")) {
