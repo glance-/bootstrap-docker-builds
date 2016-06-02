@@ -63,7 +63,7 @@ while (next_path != null) {
                   room('devops')
                }
                if (env['jabber'] != null) {
-                  publishJabber(env['jabber'] {
+                  publishJabber(env['jabber']) {
                      strategyName('ANY_FAILURE')
                   }
                }
