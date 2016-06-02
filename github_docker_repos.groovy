@@ -63,10 +63,12 @@ while (next_path != null) {
                }
             }
             publishers {
+               /*
                slackNotifier {
                   teamDomain('SUNET')
                   room('devops')
                }
+               */
                if (env['jabber'] != null) {
                   publishJabber(env['jabber']) {
                      strategyName('ANY_FAILURE')
