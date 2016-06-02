@@ -21,10 +21,11 @@ while (next_path != null) {
     resp.headers.'Link'.split(',').each {
        out.println(it)
        out.println("---")
-       def m = (it =~ /<https:\/\/api.github.com(\s+)>;\S+rel=\"next\"/)
+       def m = (it =~ /<https:\/\/api.github.com([^>]+)>;\S+rel=\"next\"/)
        if (m.matches()) {
           next_path = m.group(1)
        }
+       out.println(next_path)
     }
 
     repos.each {
