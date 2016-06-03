@@ -70,7 +70,7 @@ while (next_path != null) {
             publishers {
                slackNotifier {
                   teamDomain('SUNET')
-                  authToken("${SLACK_TOKEN}".toString)
+                  authToken("${SLACK_TOKEN}".toString())
                   room(env.slack.room)
                   notifyAborted(true)
                   notifyFailure(true)
