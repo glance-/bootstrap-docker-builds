@@ -49,7 +49,7 @@ while (next_path != null) {
       if (name != null && full_name != null) { 
       out.println("${name}")
       hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
-      if (name.contains("docker")) {
+      if (name.contains("docker") && !name.equals("bootstrap-docker-builds")) {
          job(name) {
             def env = ['slack':['room':'devops'],'triggers':[:]]
             def files = workspace.list()
