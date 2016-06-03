@@ -50,11 +50,9 @@ while (next_path != null) {
       hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
       if (name.contains("docker-satosa")) {
          job(name) {
-            def env = ['slack':['room':'devops']]
+            def env = ['slack':['room':'devops'],'triggers':[:]]
             def files = workspace.list()
-            if (files.contains('.jenkins.yaml')) {
-               env << Yaml.load("https://raw.githubusercontent.com/${full_name}/master/.jenkins.yaml".toURL().getText())
-            }
+            env << Yaml.load("https://raw.githubusercontent.com/${full_name}/master/.jenkins.yaml".toURL().getText())
             scm {
                git("https://github.com/${full_name}.git", "master")
             }
