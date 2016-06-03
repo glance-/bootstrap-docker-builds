@@ -63,8 +63,8 @@ while (next_path != null) {
             }
             triggers {
                githubPush()
-               if (env['schedule'] != null) {
-                  cron(env['schedule'])
+               if (env.schedule != null) {
+                  cron(env.schedule)
                }
             }
             publishers {
@@ -87,8 +87,8 @@ while (next_path != null) {
                   commitInfoChoice('NONE')
                   sendAs(env.slack.sendas)
                }
-               if (env['jabber'] != null) {
-                  publishJabber(env['jabber']) {
+               if (env.jabber != null) {
+                  publishJabber(env.jabber) {
                      strategyName('ANY_FAILURE')
                   }
                }
