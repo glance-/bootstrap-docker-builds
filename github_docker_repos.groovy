@@ -52,19 +52,16 @@ while (next_path != null) {
          job(name) {
             def env = ['slack':['room':'devops']]
             def files = workspace.list()
-            if (files.contains('.jenkins.json')) {
-               env << (new JsonSlurper()).parseText(streamFileFromWorkspace('.jenkins.json'))
-            }
             if (files.contains('.jenkins.yaml')) {
-               env << Yaml.load(streamFileFromWorkspace('.jenkins.yaml'))
+               env << Yaml.load("https://raw.githubusercontent.com/${full_name}/master/.jenkins.yaml".toURL().getText())
             }
             scm {
                git("https://github.com/${full_name}.git", "master")
             }
             triggers {
                githubPush()
-               if (env.schedule != null) {
-                  cron(env.schedule)
+               if (env.triggers.cron != null) {
+                  cron(env.triggers.cron)
                }
             }
             publishers {
