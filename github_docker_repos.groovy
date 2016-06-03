@@ -77,7 +77,7 @@ while (next_path != null) {
                   notifyNotBuilt(true)
                   notifyUnstable(true)
                   notifyBackToNormal(true)
-                  notifySuccess(false)
+                  notifySuccess(true)
                   notifyRepeatedFailure(false)
                   startNotification(false)
                   includeTestSummary(false)
