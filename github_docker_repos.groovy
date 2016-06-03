@@ -48,7 +48,7 @@ while (next_path != null) {
       if (name != null && full_name != null) { 
       out.println("${name}")
       hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
-      if (name.contains("docker-satosa")) {
+      if (name.contains("docker")) {
          job(name) {
             def env = ['slack':['room':'devops'],'triggers':[:]]
             def files = workspace.list()
