@@ -3,6 +3,7 @@ import groovy.json.JsonSlurper
 import static groovyx.net.http.Method.GET
 import static groovyx.net.http.ContentType.JSON
 import org.ho.yaml.Yaml
+import java.io.FileNotFoundException
 
 def org = 'SUNET'
 def url = "https://api.github.com/"
@@ -52,7 +53,9 @@ while (next_path != null) {
          job(name) {
             def env = ['slack':['room':'devops'],'triggers':[:]]
             def files = workspace.list()
-            env << Yaml.load("https://raw.githubusercontent.com/${full_name}/master/.jenkins.yaml".toURL().getText())
+            try {
+               env << Yaml.load("https://raw.githubusercontent.com/${full_name}/master/.jenkins.yaml".toURL().getText())
+            } catch (FileNotFoundException ex) {}
             scm {
                git("https://github.com/${full_name}.git", "master")
             }
