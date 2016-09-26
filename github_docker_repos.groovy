@@ -55,7 +55,10 @@ while (next_path != null) {
             def files = workspace.list()
             try {
                env << Yaml.load("https://raw.githubusercontent.com/${full_name}/master/.jenkins.yaml".toURL().getText())
-            } catch (FileNotFoundException ex) {}
+            } catch (FileNotFoundException ex) {
+               out.println(ex)
+            }
+            out.println("${env}")
             scm {
                git("https://github.com/${full_name}.git", "master")
             }
