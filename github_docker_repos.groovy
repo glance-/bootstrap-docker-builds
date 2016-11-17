@@ -95,8 +95,12 @@ while (next_path != null) {
                }
             }
             steps {
+               def repo_name = full_name
+               if (env.name != null) {
+                   repo_name = env.name
+               }
                dockerBuildAndPublish {
-                  repositoryName(full_name)
+                  repositoryName(repo_name)
                   dockerRegistryURL("https://docker.sunet.se")
                   tag("git-\${GIT_REVISION,length=8},ci-${name}-\${BUILD_NUMBER}")
                   forcePull(true)
