@@ -103,6 +103,7 @@ while (next_path != null) {
                   dockerRegistryURL("https://docker.sunet.se")
                   tag("git-\${GIT_REVISION,length=8},ci-${name}-\${BUILD_NUMBER}")
                   forcePull(true)
+                  forceTag(false)
                   createFingerprints(true)
                }
             }
