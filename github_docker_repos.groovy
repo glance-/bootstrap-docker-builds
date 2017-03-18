@@ -84,7 +84,6 @@ while (next_path != null) {
                   includeTestSummary(false)
                   includeCustomMessage(false)
                   customMessage(env.slack.custom_message)
-                  buildServerUrl("https://ci.sunet.se")
                   commitInfoChoice('NONE')
                   sendAs(env.slack.sendas)
                }
