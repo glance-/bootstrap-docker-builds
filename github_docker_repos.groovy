@@ -1,5 +1,5 @@
 @Grapes(
-        @Grab(group='org.codehaus.groovy', module='http-builder' , version='0.4.0')
+        @Grab(group='org.codehaus.groovy', module='http-builder' , version='0.6.0')
 )
 @Grapes(
         @Grab(group='org.codehaus.groovy', module='groovy-json' , version='2.4.12')
@@ -13,6 +13,7 @@ import static groovyx.net.http.Method.GET
 import static groovyx.net.http.ContentType.JSON
 import org.ho.yaml.Yaml
 import java.io.FileNotFoundException
+import jenkins.model.Jenkins
 
 def org = 'SUNET'
 def url = "https://api.github.com/"
