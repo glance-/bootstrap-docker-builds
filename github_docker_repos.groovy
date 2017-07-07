@@ -1,5 +1,7 @@
 @Grapes(
         @Grab(group='org.codehaus.groovy', module='http-builder' , version='0.4.0')
+)
+@Grapes(
         @Grab(group='org.codehaus.groovy', module='groovy-json' , version='2.4.12')
 )
 import groovyx.net.http.HTTPBuilder
