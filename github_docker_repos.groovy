@@ -1,5 +1,5 @@
 @Grapes(
-        @Grab(group='org.codehaus.groovy', module='http-builder' , version='0.6')
+        @Grab(group='org.codehaus.groovy.modules.http-builder', module='http-builder' , version='0.6')
 )
 @Grapes(
         @Grab(group='org.codehaus.groovy', module='groovy-json' , version='2.4.12')
