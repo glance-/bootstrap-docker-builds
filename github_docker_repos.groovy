@@ -4,6 +4,9 @@
 @Grapes(
         @Grab(group='org.codehaus.groovy', module='groovy-json' , version='2.4.12')
 )
+@Grapes(
+        @Grab(group='org.jyaml', module='jyaml', version='1.3')
+)
 import groovyx.net.http.HTTPBuilder
 import groovy.json.JsonSlurper
 import static groovyx.net.http.Method.GET
