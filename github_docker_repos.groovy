@@ -11,7 +11,7 @@ import groovyx.net.http.HTTPBuilder
 import groovy.json.JsonSlurper
 import static groovyx.net.http.Method.GET
 import static groovyx.net.http.ContentType.JSON
-import org.jyaml.Yaml
+import org.ho.yaml.Yaml
 import java.io.FileNotFoundException
 
 def org = 'SUNET'
