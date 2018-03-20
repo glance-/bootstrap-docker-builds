@@ -59,7 +59,7 @@ def load_env(repo) {
 
 def add_job(env) {
     if (env.builders.size() > 0) {
-        out.println("generating job for ${full_name} using builders: ${env.builders}"
+        out.println("generating job for ${full_name} using builders: ${env.builders}")
         job(env.name) {
             scm {
                 git("https://github.com/${env.full_name}.git", "master")
