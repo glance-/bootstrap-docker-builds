@@ -114,10 +114,12 @@ def add_job(env) {
                     }
                     python {
                         command('python setup.py install')
+                    }
+                    python {
                         command('python setup.py test')
                     }
                     publishOverSsh {
-                        server('pypi.sunet.se') {
+                        server('pypi.nordu.net') {
                             transferSet {
                                 sourceFiles('dist/*.egg,dist/*.tar.gz')
                                 removePrefix('dist')
