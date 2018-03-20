@@ -23,11 +23,15 @@ def _repo_file(full_name,branch,fn) {
    return "https://raw.githubusercontent.com/${full_name}/${branch}/${fn}"
 }
 
+def _is_disabled(env) {
+    return env.disabled.toBoolean();
+}
+
 def load_env(repo) {
    def name = repo.name
    def full_name = repo.full_name.toLowerCase()
 
-   def env = ['slack':['room':'devops'],'triggers':[:],'name':name,'full_name':full_name,'builders': []]
+   def env = ['disabled': 'false', 'slack':['room':'devops'],'triggers':[:],'name':name,'full_name':full_name,'builders': []]
    try {
       env << Yaml.load(try_get_file(_repo_file(full_name,"master",".jenkins.yaml")))
    } catch (FileNotFoundException ex) {
@@ -49,7 +53,7 @@ def load_env(repo) {
          }
       } catch (FileNotFoundException ex) { }
 
-      if (env.script != null) {
+      if (env.script != null) {println "Job= '${counter++}' '${job.name}' scm '${job.scm}'"
          env.builders += "script"
       }
    }
@@ -58,7 +62,7 @@ def load_env(repo) {
 }
 
 def add_job(env) {
-    if (env.builders.size() > 0) {
+    if (env.builders.size() > 0 && !_is_disabled(env)) {
         out.println("generating job for ${env.full_name} using builders: ${env.builders}")
         job(env.name) {
             scm {
@@ -106,9 +110,19 @@ def add_job(env) {
                         command('test -f requirements.txt && pip install -r requirements.txt')
                         command('test -f test_requirements.txt && pip install -r test_requirements.txt')
                         command('pip install nose coverage')
+                        clear()
+                    }
+                    python {
                         command('python setup.py install')
                         command('python setup.py test')
-                        clear()
+                    }
+                    publishOverSsh {
+                        server('pypi.sunet.se') {
+                            transferSet {
+                                sourceFiles('dist/*.egg,dist/*.tar.gz')
+                                removePrefix('dist')
+                            }
+                        }
                     }
                 } else if (env.builders.contains("docker")) {
                    dockerBuildAndPublish {
