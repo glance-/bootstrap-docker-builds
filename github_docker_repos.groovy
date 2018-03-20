@@ -150,7 +150,7 @@ orgs.each {
             }
 
             repos.each {
-                out.println("repo: ${name}")
+                out.println("repo: ${it.name}")
                 def name = it.name
                 def full_name = it.full_name.toLowerCase()
                 if (name != null && full_name != null && name != "null" && full_name != "null") {
