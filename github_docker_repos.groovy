@@ -28,8 +28,8 @@ def _repo_file(full_name,branch,fn) {
 }
 
 def load_env(repo) {
-   def name = it.name
-   def full_name = it.full_name.toLowerCase()
+   def name = repo.name
+   def full_name = repo.full_name.toLowerCase()
 
    def env = ['slack':['room':'devops'],'triggers':[:],'name':name,'full_name':full_name,'builders': []]
    try {
