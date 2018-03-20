@@ -94,7 +94,7 @@ def add_job(env) {
             }
         }
         steps {
-            if (env.builder.contains("docker")) {
+            if (env.builders.contains("docker")) {
                dockerBuildAndPublish {
                   repositoryName(env.docker_name)
                   dockerRegistryURL("https://docker.sunet.se")
