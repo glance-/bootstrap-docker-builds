@@ -58,51 +58,53 @@ def load_env(repo) {
 }
 
 def add_job(env) {
-    job(env.name) {
-        scm {
-            git("https://github.com/${env.full_name}.git", "master")
-        }
-        triggers {
-            githubPush()
-            if (env.triggers.cron != null) {
-               cron(env.triggers.cron)
+    if (env.builders.size() > 0) {
+        job(env.name) {
+            scm {
+                git("https://github.com/${env.full_name}.git", "master")
             }
-        }
-        publishers {
-            slackNotifier {
-               teamDomain('SUNET')
-               authToken("${SLACK_TOKEN}".toString())
-               room(env.slack.room)
-               notifyAborted(true)
-               notifyFailure(true)
-               notifyNotBuilt(true)
-               notifyUnstable(true)
-               notifyBackToNormal(true)
-               notifySuccess(false)
-               notifyRepeatedFailure(true)
-               startNotification(false)
-               includeTestSummary(false)
-               includeCustomMessage(false)
-               customMessage(env.slack.custom_message)
-               commitInfoChoice('NONE')
-               sendAs(env.slack.sendas)
+            triggers {
+                githubPush()
+                if (env.triggers.cron != null) {
+                   cron(env.triggers.cron)
+                }
             }
-            if (env.jabber != null) {
-               publishJabber(env.jabber) {
-                  strategyName('ANY_FAILURE')
-               }
+            publishers {
+                slackNotifier {
+                   teamDomain('SUNET')
+                   authToken("${SLACK_TOKEN}".toString())
+                   room(env.slack.room)
+                   notifyAborted(true)
+                   notifyFailure(true)
+                   notifyNotBuilt(true)
+                   notifyUnstable(true)
+                   notifyBackToNormal(true)
+                   notifySuccess(false)
+                   notifyRepeatedFailure(true)
+                   startNotification(false)
+                   includeTestSummary(false)
+                   includeCustomMessage(false)
+                   customMessage(env.slack.custom_message)
+                   commitInfoChoice('NONE')
+                   sendAs(env.slack.sendas)
+                }
+                if (env.jabber != null) {
+                   publishJabber(env.jabber) {
+                      strategyName('ANY_FAILURE')
+                   }
+                }
             }
-        }
-        steps {
-            if (env.builders.contains("docker")) {
-               dockerBuildAndPublish {
-                  repositoryName(env.docker_name)
-                  dockerRegistryURL("https://docker.sunet.se")
-                  tag("git-\${GIT_REVISION,length=8},ci-${env.name}-\${BUILD_NUMBER}")
-                  forcePull(true)
-                  forceTag(false)
-                  createFingerprints(true)
-               }
+            steps {
+                if (env.builders.contains("docker")) {
+                   dockerBuildAndPublish {
+                      repositoryName(env.docker_name)
+                      dockerRegistryURL("https://docker.sunet.se")
+                      tag("git-\${GIT_REVISION,length=8},ci-${env.name}-\${BUILD_NUMBER}")
+                      forcePull(true)
+                      forceTag(false)
+                      createFingerprints(true)
+                   }
+                }
             }
         }
     }
@@ -120,13 +122,11 @@ orgs.each {
       api.request(GET,JSON) { req ->
         uri.path = next_path
         if (next_query != null) {
-           out.println(next_query)
            uri.query = next_query
         }
         headers.'User-Agent' = 'Mozilla/5.0'
 
         response.success = { resp, reader ->
-            out.println(resp)
             assert resp.status == 200
 
             def repos = reader
@@ -146,7 +146,6 @@ orgs.each {
                      }
                   }
                }
-               out.println(next_path)
             }
 
             repos.each {
