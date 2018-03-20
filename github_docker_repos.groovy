@@ -158,7 +158,7 @@ orgs.each {
             repos.each {
               def name = it.name
               def full_name = it.full_name.toLowerCase()
-              if (name != null && full_name != null && name != "null" and full_name != "null") {
+              if (name != null && full_name != null && name != "null"&& full_name != "null") {
                 out.println("repo: ${name}")
                 hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
                 env = load_env(it)
