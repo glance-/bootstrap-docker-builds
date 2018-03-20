@@ -107,6 +107,8 @@ def add_job(env) {
                 }
             }
         }
+    } else {
+        out.println("No builder for ${env.full_name}... skipping job"
     }
 }
 
@@ -158,6 +160,7 @@ orgs.each {
                     env = load_env(it)
                     add_job(env)
                 }
+                out.println("---- EOJ ----")
             }
         }
       }
