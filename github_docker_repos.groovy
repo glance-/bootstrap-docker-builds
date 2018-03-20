@@ -62,7 +62,7 @@ def add_job(env) {
         scm {
             git("https://github.com/${env.full_name}.git", "master")
         }
-        triggers {a
+        triggers {
             githubPush()
             if (env.triggers.cron != null) {
                cron(env.triggers.cron)
