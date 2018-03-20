@@ -63,7 +63,6 @@ def load_env(repo) {
 
 def add_job(env) {
     job(env.name) {
-        def env = ['slack':['room':'devops'],'triggers':[:]]
         scm {
             git("https://github.com/${env.full_name}.git", "master")
         }
@@ -115,7 +114,6 @@ def add_job(env) {
 
 def orgs = ['SUNET']
 def url = "https://api.github.com/"
-def api = new HTTPBuilder(url)
 
 orgs.each {
    def next_path = "/orgs/${it}/repos"
