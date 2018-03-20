@@ -123,9 +123,7 @@ def add_job(env) {
     } else {
         out.println("No builder for ${env.full_name}... removing job")
         job(env.full_name) {
-            dsl {
-                removeAction('DELETE')
-            }
+            disabled(true)
         }
     }
 }
