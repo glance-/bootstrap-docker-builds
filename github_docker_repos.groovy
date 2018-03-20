@@ -16,11 +16,7 @@ import java.io.FileNotFoundException
 import jenkins.model.Jenkins
 
 def try_get_file(url) {
-   try {
-      return url.toURL().getText()
-   } catch (FileNotFoundException ex) {
-      out.println(ex)
-   }
+    return url.toURL().getText()
 }
 
 def _repo_file(full_name,branch,fn) {
