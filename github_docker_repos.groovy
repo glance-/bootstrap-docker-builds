@@ -107,16 +107,8 @@ def add_job(env) {
                 } else if (env.builders.contains("python")) {
                     virtualenv {
                         name('venv')
-                        command('test -f requirements.txt && pip install -r requirements.txt')
-                        command('test -f test_requirements.txt && pip install -r test_requirements.txt')
-                        command('pip install nose coverage')
+                        command('test -f requirements.txt && pip install -r requirements.txt ; test -f test_requirements.txt && pip install -r test_requirements.txt' ; pip install nose coverage && python setup.py install test')
                         clear()
-                    }
-                    python {
-                        command('python setup.py install')
-                    }
-                    python {
-                        command('python setup.py test')
                     }
                     publishOverSsh {
                         server('pypi.nordu.net') {
