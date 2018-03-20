@@ -31,7 +31,7 @@ def load_env(repo) {
    def name = it.name
    def full_name = it.full_name.toLowerCase()
 
-   def env = ['slack':['room':'devops'],'triggers':[:],'name':name,'full_name':full_name,'builders'=[]]
+   def env = ['slack':['room':'devops'],'triggers':[:],'name':name,'full_name':full_name,'builders': []]
    try {
       env << Yaml.load(try_get_file(_repo_file(full_name,"master",".jenkins.yaml")))
    } catch (FileNotFoundException ex) {
