@@ -96,17 +96,11 @@ def add_job(env) {
                 }
             }
             steps {
-                if (env.builders.contains("docker")) {
-                   dockerBuildAndPublish {
-                      repositoryName(env.docker_name)
-                      dockerRegistryURL("https://docker.sunet.se")
-                      tag("git-\${GIT_REVISION,length=8},ci-${env.name}-\${BUILD_NUMBER}")
-                      forcePull(true)
-                      forceTag(false)
-                      createFingerprints(true)
-                   }
-                }
-                if (env.builders.contains("python")) {
+                if (env.builders.contains("script")) {
+                    shell(env.script)
+                } else if (env.builders.contains("make")) {
+                    shell("make && make test")
+                } else if (env.builders.contains("python")) {
                     virtualenv {
                         name('venv')
                         command('test -f requirements.txt && pip install -r requirements.txt')
@@ -116,15 +110,20 @@ def add_job(env) {
                         command('python setup.py test')
                         clear()
                     }
-
+                } else if (env.builders.contains("docker")) {
+                   dockerBuildAndPublish {
+                      repositoryName(env.docker_name)
+                      dockerRegistryURL("https://docker.sunet.se")
+                      tag("git-\${GIT_REVISION,length=8},ci-${env.name}-\${BUILD_NUMBER}")
+                      forcePull(true)
+                      forceTag(false)
+                      createFingerprints(true)
+                   }
                 }
             }
         }
     } else {
         out.println("No builder for ${env.full_name}... removing job")
-        job(env.full_name) {
-            disabled(true)
-        }
     }
 }
 
