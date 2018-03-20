@@ -107,7 +107,7 @@ def add_job(env) {
                 } else if (env.builders.contains("python")) {
                     virtualenv {
                         name('venv')
-                        command('test -f requirements.txt && pip install -r requirements.txt ; test -f test_requirements.txt ; pip install -r test_requirements.txt ; pip install nose coverage && python setup.py install test')
+                        command('test -f requirements.txt && pip install -r requirements.txt ; test -f test_requirements.txt && pip install -r test_requirements.txt ; pip install coverage ; python setup.py install test')
                         clear()
                     }
                     publishOverSsh {
