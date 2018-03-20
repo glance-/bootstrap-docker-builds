@@ -106,6 +106,18 @@ def add_job(env) {
                       createFingerprints(true)
                    }
                 }
+                if (env.builders.contains("python")) {
+                    virtualenv {
+                        name('venv')
+                        command('test -f requirements.txt && pip install -r requirements.txt')
+                        command('test -f test_requirements.txt && pip install -r test_requirements.txt')
+                        command('pip install nose coverage')
+                        command('python setup.py install')
+                        command('python setup.py test')
+                        clear()
+                    }
+
+                }
             }
         }
     } else {
