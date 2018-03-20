@@ -50,6 +50,7 @@ def load_env(repo) {
       try {
          if (try_get_file(_repo_file(full_name,"master","setup.py")).contains("python")) {
             env.builders += "python"
+            env.python_source_directory = "src"
          }
       } catch (FileNotFoundException ex) { }
 
@@ -104,10 +105,22 @@ def add_job(env) {
                     shell(env.script)
                 } else if (env.builders.contains("make")) {
                     shell("make && make test")
+                } else if (env.builders.contains("sunet-python")) {
+                    managedScript('sunet_python_builder') {
+                        arguments(env.name)
+                        arguments(env.python_source_directory)
+                    }
                 } else if (env.builders.contains("python")) {
                     virtualenv {
                         name('venv')
-                        command('test -f requirements.txt && pip install -r requirements.txt ; test -f test_requirements.txt && pip install -r test_requirements.txt ; pip install coverage ; python setup.py install test')
+                        def pip = "pip"
+                        if (env.python_major_version == "3") {
+                            pythonName('System-Python3')
+                            pip = "pip3"
+                        } else {
+                            pythonName('System-Python')
+                        }
+                        command('test -f requirements.txt && ${pip} install -r requirements.txt ; test -f test_requirements.txt && ${pip} install -r test_requirements.txt ; ${pip} install coverage ; python setup.py install test')
                         clear()
                     }
                     publishOverSsh {
