@@ -64,7 +64,7 @@ def load_env(repo) {
         }
    } catch (FileNotFoundException ex) { }
 
-    if (env.docker_file == null && env.docker_container == null) {
+    if (env.docker_file == null && env.docker_container == null && !env.builders.contains("docker")) {
         env.docker_container = "docker.sunet.se/jenkins-job"
     }
 
