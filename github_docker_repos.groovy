@@ -109,18 +109,18 @@ def add_job(env) {
                    }
                 }
             }
-            steps {
-                if (env.docker_image != null || env.docker_file != null) {
-                    wrappers {
-                        buildInDocker {
-                            if (env.docker_image != null) {
-                                image(env.docker_image)
-                            } else if (env.docker_file != null) {
-                                dockerfile('.',env.docker_file)
-                            }
+            if (!env.no_docker.toBoolean() && (env.docker_image != null || env.docker_file != null)) {
+                wrappers {
+                    buildInDocker {
+                        if (env.docker_image != null) {
+                            image(env.docker_image)
+                        } else if (env.docker_file != null) {
+                            dockerfile('.',env.docker_file)
                         }
                     }
                 }
+            }
+            steps {
                 if (env.builders.contains("script")) {
                     shell(env.script)
                 } else if (env.builders.contains("make")) {
