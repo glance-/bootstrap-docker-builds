@@ -123,8 +123,8 @@ def add_job(env) {
                    }
                 }
             }
-            def use_docker = (env.docker_disable == null ? true : !env.docker_disable.toBoolean()) && !env.builders.contains("docker")
-            if (use_docker && (env.docker_image != null || env.docker_file != null)) {
+            def want_docker = (env.docker_disable == null ? true : !env.docker_disable.toBoolean()) && !env.builders.contains("docker")
+            if (want_docker && (env.docker_image != null || env.docker_file != null)) {
                 wrappers {
                     buildInDocker {
                         forcePull(true);
@@ -143,32 +143,8 @@ def add_job(env) {
                     shell("make clean && make && make test")
                 } else if (env.builders.contains("cmake")) {
                     shell("/opt/builders/cmake")
-                } else if (env.builders.contains("sunet-python")) {
-                    managedScript('sunet_python_builder') {
-                        arguments(env.name)
-                        arguments(env.python_source_directory)
-                    }
                 } else if (env.builders.contains("python")) {
-                    virtualenv {
-                        name('venv')
-                        def pip = "pip"
-                        if (env.python_major_version == "3") {
-                            pythonName('System-Python3')
-                            pip = "pip3"
-                        } else {
-                            pythonName('System-Python')
-                        }
-                        command('test -f requirements.txt && ${pip} install -r requirements.txt ; test -f test_requirements.txt && ${pip} install -r test_requirements.txt ; ${pip} install coverage ; python setup.py install test')
-                        clear()
-                    }
-                    publishOverSsh {
-                        server('pypi.nordu.net') {
-                            transferSet {
-                                sourceFiles('dist/*.egg,dist/*.tar.gz')
-                                removePrefix('dist')
-                            }
-                        }
-                    }
+                    shell("/opt/builders/python ${env.name} ${env.python_source_directory}")
                 } else if (env.builders.contains("docker")) {
                    dockerBuildAndPublish {
                       repositoryName(env.docker_name)
