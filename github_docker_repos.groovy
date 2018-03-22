@@ -50,7 +50,6 @@ def load_env(repo) {
       try {
          if (try_get_file(_repo_file(full_name,"master","setup.py")).contains("python")) {
             env.builders += "python"
-            env.python_source_directory = "src"
          }
       } catch (FileNotFoundException ex) { }
 
@@ -58,6 +57,16 @@ def load_env(repo) {
          env.builders += "script"
       }
    }
+
+   try {
+        if (try_get_file(_repo_file(full_name,"master","Dockerfile.jenkins")).contains("FROM")) {
+            env.docker_file = "Dockerfile.jenkins"
+        }
+   } catch (FileNotFoundException ex) { }
+
+    if (env.docker_file == null && env.docker_container == null) {
+        env.docker_container = "docker.sunet.se/jenkins-job"
+    }
 
    return env
 }
@@ -101,6 +110,17 @@ def add_job(env) {
                 }
             }
             steps {
+                if (env.docker_image != null || env.docker_file != null) {
+                    wrappers {
+                        buildInDocker {
+                            if (env.docker_image != null) {
+                                image(env.docker_image)
+                            } else if (env.docker_file != null) {
+                                dockerfile('.',env.docker_file)
+                            }
+                        }
+                    }
+                }
                 if (env.builders.contains("script")) {
                     shell(env.script)
                 } else if (env.builders.contains("make")) {
