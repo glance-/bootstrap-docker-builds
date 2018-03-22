@@ -123,6 +123,7 @@ def add_job(env) {
             if (use_docker && (env.docker_image != null || env.docker_file != null)) {
                 wrappers {
                     buildInDocker {
+                        forcePull(true);
                         if (env.docker_image != null) {
                             image(env.docker_image)
                         } else if (env.docker_file != null) {
