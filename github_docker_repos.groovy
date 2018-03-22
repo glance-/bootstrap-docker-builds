@@ -35,7 +35,7 @@ def load_env(repo) {
    try {
       env << Yaml.load(try_get_file(_repo_file(full_name,"master",".jenkins.yaml")))
    } catch (FileNotFoundException ex) {
-      out.println("No .jenkins.yaml for ${full_name}...")
+      out.println("No .jenkins.yaml for ${full_name}... will use defaults")
    }
 
     // detecting builders
@@ -143,7 +143,7 @@ def add_job(env) {
                     shell("make clean && make && make test")
                 } else if (env.builders.contains("cmake")) {
                     shell("/opt/builders/cmake")
-                } else if (env.builders.contains("python")) {
+                } else if (env.builders.contains("python") || env.builders.contains("sunet-python")) {
                     shell("/opt/builders/python ${env.name} ${env.python_source_directory}")
                 } else if (env.builders.contains("docker")) {
                    dockerBuildAndPublish {
