@@ -38,6 +38,8 @@ def load_env(repo) {
       out.println("No .jenkins.yaml for ${full_name}...")
    }
 
+    // detecting builders
+
    if (env.builders == null || env.builders.size() == 0) {
       env.builders = []
       if (name.contains("docker") && !name.equals("bootstrap-docker-builds")) {
@@ -53,10 +55,16 @@ def load_env(repo) {
          }
       } catch (FileNotFoundException ex) { }
 
-      if (env.script != null) {println "Job= '${counter++}' '${job.name}' scm '${job.scm}'"
+      if (env.script != null) {
          env.builders += "script"
       }
+
+      if (try_get_file(_repo_file(full_name,"master","CMakeLists.txt"))) {
+        env.builders += "cmake"
+      }
     }
+
+    // detecting wrappers
 
     try {
         if (try_get_file(_repo_file(full_name,"master","Dockerfile.jenkins")).contains("FROM")) {
@@ -125,7 +133,9 @@ def add_job(env) {
                 if (env.builders.contains("script")) {
                     shell(env.script)
                 } else if (env.builders.contains("make")) {
-                    shell("make && make test")
+                    shell("make clean && make && make test")
+                } else if (env.builders.contains("cmake")) {
+                    shell("rm -rf build && mkdir build && cd build && cmake .. && make && make test")
                 } else if (env.builders.contains("sunet-python")) {
                     managedScript('sunet_python_builder') {
                         arguments(env.name)
