@@ -99,7 +99,10 @@ def add_job(env) {
             triggers {
                 githubPush()
                 if (env.triggers.cron != null) {
-                   cron(env.triggers.cron)
+                    cron(env.triggers.cron)
+                }
+                if (env.upstream != null && env.upstream.size() > 0) {
+                    upstream(env.upstream.join(' '))
                 }
             }
             publishers {
@@ -125,6 +128,9 @@ def add_job(env) {
                    publishJabber(env.jabber) {
                       strategyName('ANY_FAILURE')
                    }
+                }
+                if (env.downstream != null && env.downstream.size() > 0) {
+                    downstream(env.downstream.join(' '))
                 }
             }
             def want_docker = (env.docker_disable == null ? true : !env.docker_disable.toBoolean()) && !env.builders.contains("docker")
