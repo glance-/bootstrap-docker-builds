@@ -46,12 +46,16 @@ def load_env(repo) {
 
    if (env.builders == null || env.builders.size() == 0) {
       env.builders = []
-      if (name.contains("docker") && !name.equals("bootstrap-docker-builds")) {
-         env.builders += "docker"
-         if (env.docker_name == null) {
+
+      try {
+        if (!name.equals("bootstrap-docker-builds") && try_get_file(_repo_file(full_name,"master","Dockerfile"))) {
+            env.builders += "docker"
+        }
+
+        if (env.docker_name == null) {
             env.docker_name = full_name
-         }
-      }
+        }
+      } catch (FileNotFoundException ex) { }
 
       try {
          if (try_get_file(_repo_file(full_name,"master","setup.py")).contains("python")) {
