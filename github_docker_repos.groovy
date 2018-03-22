@@ -59,9 +59,11 @@ def load_env(repo) {
          env.builders += "script"
       }
 
-      if (try_get_file(_repo_file(full_name,"master","CMakeLists.txt"))) {
-        env.builders += "cmake"
-      }
+      try {
+          if (try_get_file(_repo_file(full_name,"master","CMakeLists.txt"))) {
+            env.builders += "cmake"
+          }
+      } catch (FileNotFoundException ex) { }
     }
 
     // detecting wrappers
