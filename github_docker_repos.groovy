@@ -56,16 +56,16 @@ def load_env(repo) {
       if (env.script != null) {println "Job= '${counter++}' '${job.name}' scm '${job.scm}'"
          env.builders += "script"
       }
-   }
+    }
 
-   try {
+    try {
         if (try_get_file(_repo_file(full_name,"master","Dockerfile.jenkins")).contains("FROM")) {
             env.docker_file = "Dockerfile.jenkins"
         }
-   } catch (FileNotFoundException ex) { }
+    } catch (FileNotFoundException ex) { }
 
-    if (env.docker_file == null && env.docker_container == null && !env.builders.contains("docker")) {
-        env.docker_container = "docker.sunet.se/jenkins-job"
+    if (env.docker_file == null && env.docker_image == null) {
+        env.docker_image = "docker.sunet.se/jenkins-job"
     }
 
    return env
@@ -109,8 +109,8 @@ def add_job(env) {
                    }
                 }
             }
-            def no_docker = env.no_docker == null ? false : env.no_docker.toBoolean()
-            if (!no_docker && (env.docker_image != null || env.docker_file != null)) {
+            def use_docker = (env.docker_disable == null ? true : !env.docker_disable.toBoolean()) && !env.builders.contains("docker")
+            if (use_docker && (env.docker_image != null || env.docker_file != null)) {
                 wrappers {
                     buildInDocker {
                         if (env.docker_image != null) {
