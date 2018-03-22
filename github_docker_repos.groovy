@@ -109,7 +109,7 @@ def add_job(env) {
                    }
                 }
             }
-            def no_docker = env.no_docker == null ? False : env.no_docker.toBoolean()
+            def no_docker = env.no_docker == null ? false : env.no_docker.toBoolean()
             if (!no_docker && (env.docker_image != null || env.docker_file != null)) {
                 wrappers {
                     buildInDocker {
