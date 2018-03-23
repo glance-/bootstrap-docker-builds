@@ -83,7 +83,7 @@ def load_env(repo) {
     } catch (FileNotFoundException ex) { }
 
     if (env.docker_file == null && env.docker_image == null) {
-        env.docker_image = "docker.sunet.se/jenkins-job"
+        env.docker_image = "docker.sunet.se/sunet/docker-jenkins-job"
     }
 
    return env
@@ -140,8 +140,14 @@ def add_job(env) {
                         forcePull(true);
                         if (env.docker_image != null) {
                             image(env.docker_image)
+                            // Enable docker in docker
+                            volume('/usr/bin/docker', '/usr/bin/docker:ro')
+                            volume('/var/run/docker.sock', '/var/run/docker.sock:rw')
                         } else if (env.docker_file != null) {
                             dockerfile('.',env.docker_file)
+                            // Enable docker in docker
+                            volume('/usr/bin/docker', '/usr/bin/docker:ro')
+                            volume('/var/run/docker.sock', '/var/run/docker.sock:rw')
                         }
                     }
                 }
