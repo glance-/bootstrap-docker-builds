@@ -141,12 +141,12 @@ def add_job(env) {
                         if (env.docker_image != null) {
                             image(env.docker_image)
                             // Enable docker in docker
-                            volume('/usr/bin/docker', '/usr/bin/docker:ro')
+                            volume('/usr/bin/docker', '/usr/bin/docker')
                             volume('/var/run/docker.sock', '/var/run/docker.sock')
                         } else if (env.docker_file != null) {
                             dockerfile('.',env.docker_file)
                             // Enable docker in docker
-                            volume('/usr/bin/docker', '/usr/bin/docker:ro')
+                            volume('/usr/bin/docker', '/usr/bin/docker')
                             volume('/var/run/docker.sock', '/var/run/docker.sock')
                         }
                     }
