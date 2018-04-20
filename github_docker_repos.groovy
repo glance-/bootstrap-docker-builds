@@ -155,7 +155,7 @@ def add_job(env) {
             steps {
                 if (env.builders.contains("script")) {
                     out.println(env)
-                    shell(env.script)
+                    shell(env.script.toString())
                 } else if (env.builders.contains("make")) {
                     shell("make clean && make && make test")
                 } else if (env.builders.contains("cmake")) {
