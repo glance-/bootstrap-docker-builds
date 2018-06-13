@@ -154,7 +154,7 @@ def add_job(env) {
             }
             steps {
                 if (env.builders.contains("script")) {
-                    out.println(env)
+                    // out.println(env)
                     shell(env.script.join('\n'))
                 } else if (env.builders.contains("make")) {
                     shell("make clean && make && make test")
@@ -219,7 +219,7 @@ orgs.each {
 
             repos.each {
                 out.println("repo: ${it.name}")
-                out.println("it: ${it}")
+                // out.println("it: ${it}")
                 def name = it.name
                 def full_name = it.full_name.toLowerCase()
                 if (name != null && full_name != null && name != "null" && full_name != "null") {
