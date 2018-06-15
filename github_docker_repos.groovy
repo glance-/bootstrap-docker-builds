@@ -138,6 +138,7 @@ def add_job(env) {
                 wrappers {
                     buildInDocker {
                         forcePull(true);
+                        noCache(true);
                         if (env.docker_image != null) {
                             image(env.docker_image)
                             // Enable docker in docker
@@ -168,6 +169,7 @@ def add_job(env) {
                       dockerRegistryURL("https://docker.sunet.se")
                       tag("git-\${GIT_REVISION,length=8},ci-${env.name}-\${BUILD_NUMBER}")
                       forcePull(true)
+                      noCache(true)
                       forceTag(false)
                       createFingerprints(true)
                    }
