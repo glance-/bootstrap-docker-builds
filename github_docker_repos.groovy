@@ -138,7 +138,6 @@ def add_job(env) {
                 wrappers {
                     buildInDocker {
                         forcePull(true);
-                        noCache(true);
                         if (env.docker_image != null) {
                             image(env.docker_image)
                             // Enable docker in docker
