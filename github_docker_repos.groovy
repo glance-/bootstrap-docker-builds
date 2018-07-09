@@ -1,11 +1,11 @@
 @Grapes(
-        @Grab(group='org.codehaus.groovy.modules.http-builder', module='http-builder' , version='0.6')
+        @Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6')
 )
 @Grapes(
-        @Grab(group='org.codehaus.groovy', module='groovy-json' , version='2.4.12')
+        @Grab(group = 'org.codehaus.groovy', module = 'groovy-json', version = '2.4.12')
 )
 @Grapes(
-        @Grab(group='org.jyaml', module='jyaml', version='1.3')
+        @Grab(group = 'org.jyaml', module = 'jyaml', version = '1.3')
 )
 import groovyx.net.http.HTTPBuilder
 import groovy.json.JsonSlurper
@@ -19,8 +19,8 @@ def try_get_file(url) {
     return url.toURL().getText()
 }
 
-def _repo_file(full_name,branch,fn) {
-   return "https://raw.githubusercontent.com/${full_name}/${branch}/${fn}"
+def _repo_file(full_name, branch, fn) {
+    return "https://raw.githubusercontent.com/${full_name}/${branch}/${fn}"
 }
 
 def _is_disabled(env) {
@@ -28,65 +28,69 @@ def _is_disabled(env) {
 }
 
 def load_env(repo) {
-   def name = repo.name
-   def full_name = repo.full_name.toLowerCase()
+    def name = repo.name
+    def full_name = repo.full_name.toLowerCase()
 
-   def env = ['disabled': 'false','python_source_directory':'src','slack':['room':'devops'],'triggers':[:],'name':name,'full_name':full_name,'builders': []]
-   try {
-      env << Yaml.load(try_get_file(_repo_file(full_name,"master",".jenkins.yaml")))
-   } catch (FileNotFoundException ex) {
-      out.println("No .jenkins.yaml for ${full_name}... will use defaults")
-   }
+    def env = ['disabled': 'false', 'python_source_directory': 'src', 'slack': ['room': 'devops'], 'triggers': [:], 'name': name, 'full_name': full_name, 'builders': []]
+    try {
+        env << Yaml.load(try_get_file(_repo_file(full_name, "master", ".jenkins.yaml")))
+    } catch (FileNotFoundException ex) {
+        out.println("No .jenkins.yaml for ${full_name}... will use defaults")
+    }
 
     // detecting builders
 
-   if (env.builder != null && env.builders.size() == 0) {
+    if (env.builder != null && env.builders.size() == 0) {
         env.builders += env.builder
-   }
+    }
 
-   if (env.builders == null || env.builders.size() == 0) {
-      env.builders = []
+    if (env.builders == null || env.builders.size() == 0) {
+        env.builders = []
 
-      try {
-        if (!name.equals("bootstrap-docker-builds") && try_get_file(_repo_file(full_name,"master","Dockerfile"))) {
-            env.builders += "docker"
+        try {
+            if (!name.equals("bootstrap-docker-builds") && try_get_file(_repo_file(full_name, "master", "Dockerfile"))) {
+                env.builders += "docker"
+            }
+
+            if (env.docker_name == null) {
+                env.docker_name = full_name
+            }
+        } catch (FileNotFoundException ex) {
         }
 
-        if (env.docker_name == null) {
-            env.docker_name = full_name
+        try {
+            if (try_get_file(_repo_file(full_name, "master", "setup.py")).contains("python")) {
+                env.builders += "python"
+            }
+        } catch (FileNotFoundException ex) {
         }
-      } catch (FileNotFoundException ex) { }
 
-      try {
-         if (try_get_file(_repo_file(full_name,"master","setup.py")).contains("python")) {
-            env.builders += "python"
-         }
-      } catch (FileNotFoundException ex) { }
+        if (env.script != null) {
+            env.builders += "script"
+        }
 
-      if (env.script != null) {
-         env.builders += "script"
-      }
-
-      try {
-          if (try_get_file(_repo_file(full_name,"master","CMakeLists.txt"))) {
-            env.builders += "cmake"
-          }
-      } catch (FileNotFoundException ex) { }
+        try {
+            if (try_get_file(_repo_file(full_name, "master", "CMakeLists.txt"))) {
+                env.builders += "cmake"
+            }
+        } catch (FileNotFoundException ex) {
+        }
     }
 
     // detecting wrappers
 
     try {
-        if (try_get_file(_repo_file(full_name,"master","Dockerfile.jenkins")).contains("FROM")) {
+        if (try_get_file(_repo_file(full_name, "master", "Dockerfile.jenkins")).contains("FROM")) {
             env.docker_file = "Dockerfile.jenkins"
         }
-    } catch (FileNotFoundException ex) { }
+    } catch (FileNotFoundException ex) {
+    }
 
     if (env.docker_file == null && env.docker_image == null) {
         env.docker_image = "docker.sunet.se/sunet/docker-jenkins-job"
     }
 
-   return env
+    return env
 }
 
 def add_job(env) {
@@ -107,27 +111,27 @@ def add_job(env) {
             }
             publishers {
                 slackNotifier {
-                   teamDomain('SUNET')
-                   authToken("${SLACK_TOKEN}".toString())
-                   room(env.slack.room)
-                   notifyAborted(true)
-                   notifyFailure(true)
-                   notifyNotBuilt(true)
-                   notifyUnstable(true)
-                   notifyBackToNormal(true)
-                   notifySuccess(false)
-                   notifyRepeatedFailure(true)
-                   startNotification(false)
-                   includeTestSummary(false)
-                   includeCustomMessage(false)
-                   customMessage(env.slack.custom_message)
-                   commitInfoChoice('NONE')
-                   sendAs(env.slack.sendas)
+                    teamDomain('SUNET')
+                    authToken("${SLACK_TOKEN}".toString())
+                    room(env.slack.room)
+                    notifyAborted(true)
+                    notifyFailure(true)
+                    notifyNotBuilt(true)
+                    notifyUnstable(true)
+                    notifyBackToNormal(true)
+                    notifySuccess(false)
+                    notifyRepeatedFailure(true)
+                    startNotification(false)
+                    includeTestSummary(false)
+                    includeCustomMessage(false)
+                    customMessage(env.slack.custom_message)
+                    commitInfoChoice('NONE')
+                    sendAs(env.slack.sendas)
                 }
                 if (env.jabber != null) {
-                   publishJabber(env.jabber) {
-                      strategyName('ANY_FAILURE')
-                   }
+                    publishJabber(env.jabber) {
+                        strategyName('ANY_FAILURE')
+                    }
                 }
                 if (env.downstream != null && env.downstream.size() > 0) {
                     downstream(env.downstream.join(' '))
@@ -144,7 +148,7 @@ def add_job(env) {
                             volume('/usr/bin/docker', '/usr/bin/docker')
                             volume('/var/run/docker.sock', '/var/run/docker.sock')
                         } else if (env.docker_file != null) {
-                            dockerfile('.',env.docker_file)
+                            dockerfile('.', env.docker_file)
                             // Enable docker in docker
                             volume('/usr/bin/docker', '/usr/bin/docker')
                             volume('/var/run/docker.sock', '/var/run/docker.sock')
@@ -163,15 +167,15 @@ def add_job(env) {
                 } else if (env.builders.contains("python") || env.builders.contains("sunet-python")) {
                     shell("/opt/builders/python ${env.name} ${env.python_source_directory}")
                 } else if (env.builders.contains("docker")) {
-                   dockerBuildAndPublish {
-                      repositoryName(env.docker_name)
-                      dockerRegistryURL("https://docker.sunet.se")
-                      tag("git-\${GIT_REVISION,length=8},ci-${env.name}-\${BUILD_NUMBER}")
-                      forcePull(true)
-                      noCache(true)
-                      forceTag(false)
-                      createFingerprints(true)
-                   }
+                    dockerBuildAndPublish {
+                        repositoryName(env.docker_name)
+                        dockerRegistryURL("https://docker.sunet.se")
+                        tag("git-\${GIT_REVISION,length=8},ci-${env.name}-\${BUILD_NUMBER}")
+                        forcePull(true)
+                        noCache(true)
+                        forceTag(false)
+                        createFingerprints(true)
+                    }
                 }
             }
         }
@@ -184,54 +188,54 @@ def orgs = ['SUNET']
 def url = "https://api.github.com/"
 
 orgs.each {
-   def next_path = "/orgs/${it}/repos"
-   def next_query = null
-   def api = new HTTPBuilder(url)
+    def next_path = "/orgs/${it}/repos"
+    def next_query = null
+    def api = new HTTPBuilder(url)
 
     while (next_path != null) {
-      api.request(GET,JSON) { req ->
-        uri.path = next_path
-        if (next_query != null) {
-           uri.query = next_query
-        }
-        headers.'User-Agent' = 'Mozilla/5.0'
-
-        response.success = { resp, reader ->
-            assert resp.status == 200
-
-            def repos = reader
-            next_path = null
-            resp.headers.'Link'.split(',').each {
-               it = it.trim()
-               def m = (it =~ /<https:\/\/api.github.com([^>]+)>; rel="next"/)
-               if (m.matches()) {
-                  def a = m[0][1].split('\\?')
-                  next_path = a[0]
-                  next_query = null
-                  if (a.length == 2) {
-                     next_query = [:]
-                     a[1].split('&').each {
-                        def av = it.split('=')
-                        next_query[av[0]] = av[1]
-                     }
-                  }
-               }
+        api.request(GET, JSON) { req ->
+            uri.path = next_path
+            if (next_query != null) {
+                uri.query = next_query
             }
+            headers.'User-Agent' = 'Mozilla/5.0'
 
-            repos.each {
-                out.println("repo: ${it.name}")
-                // out.println("it: ${it}")
-                def name = it.name
-                def full_name = it.full_name.toLowerCase()
-                if (name != null && full_name != null && name != "null" && full_name != "null") {
+            response.success = { resp, reader ->
+                assert resp.status == 200
 
-                    hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
-                    env = load_env(it)
-                    add_job(env)
+                def repos = reader
+                next_path = null
+                resp.headers.'Link'.split(',').each {
+                    it = it.trim()
+                    def m = (it =~ /<https:\/\/api.github.com([^>]+)>; rel="next"/)
+                    if (m.matches()) {
+                        def a = m[0][1].split('\\?')
+                        next_path = a[0]
+                        next_query = null
+                        if (a.length == 2) {
+                            next_query = [:]
+                            a[1].split('&').each {
+                                def av = it.split('=')
+                                next_query[av[0]] = av[1]
+                            }
+                        }
+                    }
                 }
-                out.println("---- EOJ ----")
+
+                repos.each {
+                    out.println("repo: ${it.name}")
+                    // out.println("it: ${it}")
+                    def name = it.name
+                    def full_name = it.full_name.toLowerCase()
+                    if (name != null && full_name != null && name != "null" && full_name != "null") {
+
+                        hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
+                        env = load_env(it)
+                        add_job(env)
+                    }
+                    out.println("---- EOJ ----")
+                }
             }
         }
-      }
     }
 }
