@@ -28,13 +28,17 @@ def _is_disabled(env) {
 }
 
 def _build_in_docker(env) {
-    disallowed_builders = ["docker", "multi-docker"]
     if (env.docker_disable != null && !env.docker_disable.toBoolean()) {
-        if (!env.builders.containsAny(disallowed_builders)) {
-            return true
-        }
+        out.println("${env.full_name} not building in docker. docker_disable: ${env.docker_disable}")
+        return false
+    } else if (env.builders.contains("docker")) {
+        out.println("${env.full_name} not building in docker. \"docker\" in builders: ${env.builders}")
+        return false
+    } else if (env.builders.contains("multi-docker")) {
+        out.println("${env.full_name} not building in docker. \"multi-docker\" in builders: ${env.builders}")
+        return false
     }
-    return false
+    return true
 }
 
 def _slack_enabled(env) {
