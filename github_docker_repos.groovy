@@ -86,30 +86,36 @@ def load_env(repo) {
 
     // If builder or builders is empty try to guess
     if (env.builders == null || env.builders.size() == 0) {
+        out.println("No builders found for ${env.full_name}. Trying to guess.")
         env.builders = []
 
         try {
             if (!name.equals("bootstrap-docker-builds") && try_get_file(_repo_file(full_name, "master", "Dockerfile"))) {
+                out.println("Found Dockerfile for ${env.full_name}. Adding \"docker\" to builders.")
                 env.builders += "docker"
             }
 
             if (env.docker_name == null) {
+                out.println("No docker_name set using ${env.full_name}.")
                 env.docker_name = full_name
             }
         } catch (FileNotFoundException ex) { }
 
         try {
             if (try_get_file(_repo_file(full_name, "master", "setup.py")).contains("python")) {
+                out.println("Found setup.py for ${env.full_name}. Adding \"python\" to builders.")
                 env.builders += "python"
             }
         } catch (FileNotFoundException ex) { }
 
         if (env.script != null) {
+            out.println("script set for ${env.full_name}. Adding \"script\" to builders.")
             env.builders += "script"
         }
 
         try {
             if (try_get_file(_repo_file(full_name, "master", "CMakeLists.txt"))) {
+                out.println("Found CMakeLists.txt for ${env.full_name}. Adding \"cmake\" to builders.")
                 env.builders += "cmake"
             }
         } catch (FileNotFoundException ex) { }
@@ -118,11 +124,13 @@ def load_env(repo) {
     // detecting wrappers
     try {
         if (try_get_file(_repo_file(full_name, "master", "Dockerfile.jenkins")).contains("FROM")) {
+            out.println("Found Dockerfile.jenkins for ${env.full_name}. Will be used for build.")
             env.docker_file = "Dockerfile.jenkins"
         }
     } catch (FileNotFoundException ex) { }
 
     if (env.docker_file == null && env.docker_image == null) {
+        out.println("No explicit build in docker settings found for ${env.full_name}. Will use docker.sunet.se/sunet/docker-jenkins-job.")
         env.docker_image = "docker.sunet.se/sunet/docker-jenkins-job"
     }
 
