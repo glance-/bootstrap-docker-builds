@@ -254,6 +254,9 @@ def add_job(env) {
                     }
                     dockerBuildAndPublish {
                         repositoryName(env.docker_name)
+                        if (env.docker_context_dir != null) {
+                            buildContext(env.docker_context_dir)
+                        }
                         dockerRegistryURL("https://docker.sunet.se")
                         tag("git-\${GIT_REVISION,length=8},ci-${env.name}-\${BUILD_NUMBER}")
                         forcePull(true)

@@ -28,6 +28,8 @@ docker_image: docker.sunet.se/sunet/docker-jenkins-job
 docker_file: null
 # Name that built docker image should have
 docker_name: null
+# Set docker context directory if different from repo root
+docker_context_dir: .
 # String in builder will be added to the list builders
 builder: null
 # Se below for available builders
