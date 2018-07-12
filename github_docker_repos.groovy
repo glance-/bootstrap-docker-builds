@@ -268,8 +268,6 @@ def add_job(env) {
                         out.println("Managed script docker_tag.sh enabled.")
                         managedScript('docker_tag.sh') {}
                     }
-                } else if (env.builders.contains("multi-docker")) {
-                    out.println('Builder "multi-docker" used.')
                 }
             }
         }
