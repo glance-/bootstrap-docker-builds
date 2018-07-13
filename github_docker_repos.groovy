@@ -218,26 +218,29 @@ def add_job(env) {
                 }
                 // Build in docker
                 if (_build_in_docker(env) && (env.docker_image != null || env.docker_file != null)) {
+                    environmentVariables {
+                        // For docker in docker
+                        script('export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/external_libs/lib64:/external_libs/usr/lib64')
+                    }
                     buildInDocker {
                         forcePull(true);
+                        // Enable docker in docker
+                        volume('/usr/bin/docker', '/usr/bin/docker')
+                        volume('/var/run/docker.sock', '/var/run/docker.sock')
+                        volume('/lib/x86_64-linux-gnu', '/external_libs/lib64')
+                        volume('/usr/lib/x86_64-linux-gnu', '/external_libs/usr/lib64')
                         if (env.docker_image != null) {
                             out.println("${env.full_name} building in docker image ${env.docker_image}")
                             image(env.docker_image)
-                            // Enable docker in docker
-                            volume('/usr/bin/docker', '/usr/bin/docker')
-                            volume('/var/run/docker.sock', '/var/run/docker.sock')
                         } else if (env.docker_file != null) {
                             out.println("${env.full_name} building in docker image from Dockerfile ${env.docker_file}")
                             dockerfile('.', env.docker_file)
-                            // Enable docker in docker
-                            volume('/usr/bin/docker', '/usr/bin/docker')
-                            volume('/var/run/docker.sock', '/var/run/docker.sock')
                         }
                     }
                 }
             }
             steps {
-                // Builder steps
+                // Mutually exclusive builder steps
                 if (env.builders.contains("script")) {
                     out.println('Builder "script" used.')
                     shell(env.script.join('\n'))
@@ -254,7 +257,9 @@ def add_job(env) {
                         python_module = env.python_module
                     }
                     shell("/opt/builders/python ${python_module} ${env.python_source_directory}")
-                } else if (env.builders.contains("docker")) {
+                }
+                // Builder docker
+                if (env.builders.contains("docker")) {
                     out.println('Builder "docker" used.')
                     if (_managed_script_enabled(env, 'docker_build_prep.sh')) {
                         out.println("Managed script docker_build_prep.sh enabled.")
