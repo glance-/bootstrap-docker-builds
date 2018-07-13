@@ -83,7 +83,7 @@ def load_env(repo) {
 
     // If builder or builders is empty try to guess
     if (env.builders == null || env.builders.size() == 0) {
-        out.println("No builders found for ${env.full_name}. Trying to guess.")
+        out.println("No builders found for ${env.full_name}... trying to guess")
         env.builders = []
 
         try {
@@ -129,6 +129,9 @@ def load_env(repo) {
     if (env.docker_file == null && env.docker_image == null) {
         out.println("No explicit build in docker settings found for ${env.full_name}. Will use docker.sunet.se/sunet/docker-jenkins-job.")
         env.docker_image = "docker.sunet.se/sunet/docker-jenkins-job"
+    } else {
+        out.println("Using docker_file ${env.docker_file} for ${env.full_name}.")
+        out.println("Using docker_image ${env.docker_image} for ${env.full_name}.")
     }
 
     return env
