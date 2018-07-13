@@ -31,11 +31,8 @@ def _build_in_docker(env) {
     if (env.docker_disable != null && !env.docker_disable.toBoolean()) {
         out.println("${env.full_name} not building in docker. docker_disable: ${env.docker_disable}")
         return false
-    } else if (env.builders.contains("docker")) {
+    } else if (env.builders == ["docker"]) {
         out.println("${env.full_name} not building in docker. \"docker\" in builders: ${env.builders}")
-        return false
-    } else if (env.builders.contains("multi-docker")) {
-        out.println("${env.full_name} not building in docker. \"multi-docker\" in builders: ${env.builders}")
         return false
     }
     return true
