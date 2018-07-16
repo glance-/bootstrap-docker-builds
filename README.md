@@ -19,17 +19,17 @@ def env = [
 ```yaml
 # Does not add a job if set to true
 disabled: false
-# Does not try to build in a docker container if set to true
-# Using builder docker will set it to true
-docker_disable: null
-# Docker image to build inside of
-docker_image: docker.sunet.se/sunet/docker-jenkins-job
-# First build a docker image to build inside of
-docker_file: null
-# Name that built docker image should have
-docker_name: null
-# Set docker context directory if different from repo root
-docker_context_dir: .
+
+# Settings for building in a docker container
+build_in_docker:
+  # Does not try to build in a docker container if set to true
+  # Using docker as only builder will disable build in docker
+  disable: false
+  # Docker image to build inside of
+  image: docker.sunet.se/sunet/docker-jenkins-job
+  # First build a docker image to build inside of
+  dockerfile: null
+
 # String in builder will be added to the list builders
 builder: null
 # Se below for available builders
@@ -54,6 +54,10 @@ jabber: null
 # If script is not empty the script builder will be used by default
 # Every list item is a line
 script: []
+# Set to true if workspace should be removed before build
+clean_workspace: false
+
+# Settings for builder python
 # Module name to be used in python builder script, defaults to project name
 python_module: null
 # Source directory for use in python builder script
@@ -61,10 +65,15 @@ python_source_directory: src
 # The only supported value is pypi.sunet.se that uploads *.egg and *.tar.gz from ./dist
 # Will check that builder python is used
 publish_over_ssh: null
-# Set to true if workspace should be removed before build
-clean_workspace: false
+
+# Settings for builder docker
+# Name that built docker image should have
+docker_name: sunet/name_of_repo
+# Set docker context directory if different from repo root
+docker_context_dir: null
 # Use managed script in the list where applicable
 managed_scripts: []
+
 # Define extra jobs derived from this projects settings
 extra_jobs: []
 ```
@@ -80,7 +89,7 @@ builders:
   # Arguments are env.name|env.python_module env.python_source_directory
   - python
   # Will build and push a docker image to docker.sunet.se
-  # Expects the Dockerfile to be in the project root
+  # Expects the Dockerfile to be in the project root, can be change by setting docker_context_dir
   # If managed_scripts docker_build_prep.sh and/or docker_tag.sh is set those will be used
   - docker
 ```
@@ -90,7 +99,7 @@ builders:
 # An example of an extra job
 # eduid-am is Python project repo and we want a docker image built after
 # python code succefully finishes
-# The options from the outside .jenkins.yaml file will be used unless changed
+# The options from outside extra_jobs file will be used unless explicitly set in the extra job
 extra_jobs:
   - name: eduid-am-docker
     builders:
