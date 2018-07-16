@@ -28,11 +28,14 @@ def _is_disabled(env) {
 }
 
 def _build_in_docker(env) {
-    if (env.docker_disable != null && !env.docker_disable.toBoolean()) {
-        out.println("${env.full_name} not building in docker. docker_disable: ${env.docker_disable}")
+    if (env.build_in_docker.disable != null && !env.build_in_docker.disable.toBoolean()) {
+        out.println("${env.full_name} not building in docker. build_in_docker.disable: ${env.build_in_docker.disable}")
         return false
     } else if (env.builders == ["docker"]) {
-        out.println("${env.full_name} not building in docker. \"docker\" in builders: ${env.builders}")
+        out.println("${env.full_name} not building in docker. \"docker\" is the only item in builders: ${env.builders}")
+        return false
+    } else if (env.build_in_docker.image == null && env.build_in_docker.dockerfile == null) {
+        out.println("${env.full_name} not building in docker. build_in_docker.mage: ${env.build_in_docker.image} and build_in_docker.dockerfile: ${env.build_in_docker.dockerfile}")
         return false
     }
     return true
@@ -66,7 +69,8 @@ def load_env(repo) {
             'python_source_directory': 'src',
             'slack'                  : ['room': 'devops', 'disabled': false],
             'triggers'               : [:],
-            'builders'               : []
+            'builders'               : [],
+            'build_in_docker'        : ['disabled': false, 'dockerfile': null, 'image': null]
     ]
 
     // Load enviroment variables from repo yaml file
@@ -122,16 +126,16 @@ def load_env(repo) {
     try {
         if (try_get_file(_repo_file(full_name, "master", "Dockerfile.jenkins")).contains("FROM")) {
             out.println("Found Dockerfile.jenkins for ${env.full_name}. Will be used for build.")
-            env.docker_file = "Dockerfile.jenkins"
+            env.build_in_docker.dockerfile = "Dockerfile.jenkins"
         }
     } catch (FileNotFoundException ex) { }
 
-    if (env.docker_file == null && env.docker_image == null) {
+    if (env.build_in_docker.dockerfile == null && env.build_in_docker.image == null) {
         out.println("No explicit build in docker settings found for ${env.full_name}. Will use docker.sunet.se/sunet/docker-jenkins-job.")
-        env.docker_image = "docker.sunet.se/sunet/docker-jenkins-job"
+        env.build_in_docker.image = "docker.sunet.se/sunet/docker-jenkins-job"
     } else {
-        out.println("Using docker_file ${env.docker_file} for ${env.full_name}.")
-        out.println("Using docker_image ${env.docker_image} for ${env.full_name}.")
+        out.println("Using dockerfile ${env.build_in_docker.dockerfile} to build ${env.full_name}.")
+        out.println("Using image ${env.build_in_docker.image} to build ${env.full_name}.")
     }
 
     return env
@@ -217,7 +221,7 @@ def add_job(env) {
                     preBuildCleanup()
                 }
                 // Build in docker
-                if (_build_in_docker(env) && (env.docker_image != null || env.docker_file != null)) {
+                if (_build_in_docker(env)) {
                     environmentVariables {
                         // For docker in docker
                         script('export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/external_libs/lib64:/external_libs/usr/lib64')
@@ -229,12 +233,12 @@ def add_job(env) {
                         volume('/var/run/docker.sock', '/var/run/docker.sock')
                         volume('/lib/x86_64-linux-gnu', '/external_libs/lib64')
                         volume('/usr/lib/x86_64-linux-gnu', '/external_libs/usr/lib64')
-                        if (env.docker_image != null) {
-                            out.println("${env.full_name} building in docker image ${env.docker_image}")
-                            image(env.docker_image)
-                        } else if (env.docker_file != null) {
-                            out.println("${env.full_name} building in docker image from Dockerfile ${env.docker_file}")
-                            dockerfile('.', env.docker_file)
+                        if (env.build_in_docker.image != null) {
+                            out.println("${env.full_name} building in docker image ${env.build_in_docker.image}")
+                            image(env.build_in_docker.image)
+                        } else if (env.build_in_docker.dockerfile != null) {
+                            out.println("${env.full_name} building in docker image from Dockerfile ${env.build_in_docker.dockerfile}")
+                            dockerfile('.', env.build_in_docker.dockerfile)
                         }
                     }
                 }
