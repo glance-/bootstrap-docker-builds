@@ -225,9 +225,12 @@ def add_job(env) {
                 }
                 // Build in docker
                 if (_build_in_docker(env)) {
-                    environmentVariables {
-                        // For docker in docker
-                        script('export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/external_libs/lib64:/external_libs/usr/lib64')
+                    if (env.build_in_docker.export_ld_library_path == null || env.build_in_docker.export_ld_library_path.toBoolean()) {
+                        environmentVariables {
+                            // For docker in docker but can create problems with building stuff
+                            script('export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/external_libs/lib64:/external_libs/usr/lib64')
+                        }
+                        out.println("${env.full_name} will export LD_LIBRARY_PATH for build in docker container.")
                     }
                     buildInDocker {
                         forcePull(true);
