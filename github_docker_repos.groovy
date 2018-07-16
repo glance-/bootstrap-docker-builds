@@ -246,6 +246,9 @@ def add_job(env) {
                             out.println("${env.full_name} building in docker image from Dockerfile ${env.build_in_docker.dockerfile}")
                             dockerfile('.', env.build_in_docker.dockerfile)
                         }
+                        if (env.build_in_docker.verbose != null && env.build_in_docker.verbose.toBoolean()) {
+                            verbose(true)
+                        }
                     }
                 }
             }
