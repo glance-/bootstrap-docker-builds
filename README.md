@@ -29,6 +29,10 @@ build_in_docker:
   image: docker.sunet.se/sunet/docker-jenkins-job
   # First build a docker image to build inside of
   dockerfile: null
+  # Do not export LD_LIBRARY_PATH with libraries from host if set to false
+  export_ld_library_path: null
+  # Verbose output if set to true
+  verbose: null
 
 # String in builder will be added to the list builders
 builder: null
