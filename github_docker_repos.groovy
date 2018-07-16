@@ -134,8 +134,11 @@ def load_env(repo) {
         out.println("No explicit build in docker settings found for ${env.full_name}. Will use docker.sunet.se/sunet/docker-jenkins-job.")
         env.build_in_docker.image = "docker.sunet.se/sunet/docker-jenkins-job"
     } else {
-        out.println("Using dockerfile ${env.build_in_docker.dockerfile} to build ${env.full_name}.")
-        out.println("Using image ${env.build_in_docker.image} to build ${env.full_name}.")
+        if (env.build_in_docker.dockerfile != null) {
+            out.println("Using dockerfile ${env.build_in_docker.dockerfile} to build ${env.full_name}.")
+        } else {
+            out.println("Using image ${env.build_in_docker.image} to build ${env.full_name}.")
+        }
     }
 
     return env
@@ -246,25 +249,24 @@ def add_job(env) {
             steps {
                 // Mutually exclusive builder steps
                 if (env.builders.contains("script")) {
-                    out.println('Builder "script" used.')
                     shell(env.script.join('\n'))
+                    out.println('Builder "script" configured.')
                 } else if (env.builders.contains("make")) {
-                    out.println('Builder "make" used.')
                     shell("make clean && make && make test")
+                    out.println('Builder "make" configured.')
                 } else if (env.builders.contains("cmake")) {
-                    out.println('Builder "cmake" used.')
                     shell("/opt/builders/cmake")
+                    out.println('Builder "cmake" configured.')
                 } else if (env.builders.contains("python")) {
-                    out.println('Builder "python" used.')
                     python_module = env.name
                     if (env.python_module != null) {
                         python_module = env.python_module
                     }
                     shell("/opt/builders/python ${python_module} ${env.python_source_directory}")
+                    out.println('Builder "python" configured.')
                 }
                 // Builder docker
                 if (env.builders.contains("docker")) {
-                    out.println('Builder "docker" used.')
                     if (_managed_script_enabled(env, 'docker_build_prep.sh')) {
                         out.println("Managed script docker_build_prep.sh enabled.")
                         managedScript('docker_build_prep.sh') {}
@@ -285,6 +287,7 @@ def add_job(env) {
                         out.println("Managed script docker_tag.sh enabled.")
                         managedScript('docker_tag.sh') {}
                     }
+                    out.println('Builder "docker" configured.')
                 }
             }
         }
