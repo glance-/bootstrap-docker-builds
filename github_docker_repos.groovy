@@ -226,11 +226,17 @@ def add_job(env) {
                 // Build in docker
                 if (_build_in_docker(env)) {
                     if (env.build_in_docker.export_ld_library_path == null || env.build_in_docker.export_ld_library_path.toBoolean()) {
+                        out.println("${env.full_name} will export LD_LIBRARY_PATH for build in docker container.")
                         environmentVariables {
                             // For docker in docker but can create problems with building stuff
-                            script('export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/external_libs/lib64:/external_libs/usr/lib64')
+                            envs(LD_LIBRARY_PATH: '/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/external_libs/lib64:/external_libs/usr/lib64')
                         }
-                        out.println("${env.full_name} will export LD_LIBRARY_PATH for build in docker container.")
+                    } else {
+                        out.println("${env.full_name} will unset LD_LIBRARY_PATH for build in docker container.")
+                        environmentVariables {
+                            // Unset LD_LIBRARY_PATH as it seems to get set from the jenkins container when docker exec is running
+                            envs(LD_LIBRARY_PATH: '')
+                        }
                     }
                     buildInDocker {
                         forcePull(true);
