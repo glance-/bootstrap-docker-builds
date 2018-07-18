@@ -216,6 +216,19 @@ def add_job(env) {
                         }
                     }
                 }
+                // Save artifacts for use in another project
+                if (env.archive_artifacts != null) {
+                    out.println("${env.full_name} using artifact archiver for ${env.archive_artifacts.include}")
+                    artifactArchiver {
+                        artifacts(env.archive_artifacts.include)
+                        if (env.archive_artifacts.exclude != null) {
+                            out.println("${env.full_name} excluding artifacts: ${env.archive_artifacts.exclude}")
+                            excludes(env.archive_artifacts.exclude)
+                        }
+                        allowEmptyArchive(false)
+                        onlyIfSuccessful(true)
+                    }
+                }
             }
 
             wrappers {
@@ -277,6 +290,30 @@ def add_job(env) {
                     shell("/opt/builders/python ${python_module} ${env.python_source_directory}")
                     out.println('Builder "python" configured.')
                 }
+                // Copy artifacts from another project
+                if (env.copy_artifacts != null) {
+                    out.println("Copy artifacts from ${env.copy_artifacts.project_name} configured")
+                    copyArtifacts(env.copy_artifacts.project_name) {
+                        if (env.copy_artifacts.target_dir != null) {
+                            targetDirectory(env.copy_artifacts.target_dir)
+                        }
+                        if (env.copy_artifacts.include != null) {
+                            includePatterns(env.copy_artifacts.include.join(', '))
+                        }
+                        if (env.copy_artifacts.exclude != null) {
+                            excludePatterns(env.copy_artifacts.exclude.join(', '))
+                        }
+                        if (env.copy_artifacts.flatten != null) {
+                            flatten(env.copy_artifacts.flatten)
+                        }
+                        if (env.copy_artifacts.optional != null) {
+                            optional(env.copy_artifacts.optional)
+                        }
+                        buildSelector {
+                            latestSuccessful(true)
+                        }
+                    }
+                }
                 // Builder docker
                 if (env.builders.contains("docker")) {
                     if (_managed_script_enabled(env, 'docker_build_prep.sh')) {
@@ -300,6 +337,18 @@ def add_job(env) {
                         managedScript('docker_tag.sh') {}
                     }
                     out.println('Builder "docker" configured.')
+                }
+            }
+            logRotator {
+                // Rotate builds
+                //num_to_keep(10)
+                // Rotate archived artifacts
+                if (env.archive_artifacts != null) {
+                    num_to_keep = 1
+                    if (env.archive_artifacts.num_to_keep != null) {
+                        num_to_keep = env.archive_artifacts.num_to_keep
+                    }
+                    artifactNumToKeep(num_to_keep)
                 }
             }
         }
