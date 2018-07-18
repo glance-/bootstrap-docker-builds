@@ -22,17 +22,15 @@ disabled: false
 
 # Settings for building in a docker container
 build_in_docker:
-  # Does not try to build in a docker container if set to true
   # Using docker as only builder will disable build in docker
+  # Does not try to build in a docker container if set to true
   disable: false
   # Docker image to build inside of
   image: docker.sunet.se/sunet/docker-jenkins-job
   # First build a docker image to build inside of
   dockerfile: ~
-  # Do not export LD_LIBRARY_PATH with libraries from host if set to false
-  export_ld_library_path: true
   # Verbose output if set to true
-  verbose: ~
+  verbose: false
 
 # String in builder will be added to the list builders
 builder: ~
@@ -143,4 +141,8 @@ extra_jobs:
     upstream:
       - eduid-am
 ```
+
+### Tips
+#### Inconsistency detected by ld.so
+If the a new build fails with an error message saying something about "Inconsistency detected by ld.so" use `unset LD_LIBRARY_PATH` before script build command.
 
