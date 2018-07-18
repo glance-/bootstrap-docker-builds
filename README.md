@@ -28,14 +28,14 @@ build_in_docker:
   # Docker image to build inside of
   image: docker.sunet.se/sunet/docker-jenkins-job
   # First build a docker image to build inside of
-  dockerfile: null
+  dockerfile: ~
   # Do not export LD_LIBRARY_PATH with libraries from host if set to false
-  export_ld_library_path: null
+  export_ld_library_path: true
   # Verbose output if set to true
-  verbose: null
+  verbose: ~
 
 # String in builder will be added to the list builders
-builder: null
+builder: ~
 # Se below for available builders
 builders: []
 # Will set items in the list as upstream
@@ -46,35 +46,60 @@ triggers:
   # Build when push received to the master branch
   github_push: true
   # Use cron syntax to periodically build project, eg. @daily
-  cron: null
+  cron: ~
 slack:
   # Default to send errors and back to normal to the devops channel
   disabled: false
   room: "devops"
-  custom_message: null
-  sendas: null
+  custom_message: ~
+  sendas: ~
 # Jabber room to send updates to
-jabber: null
+jabber: ~
 # If script is not empty the script builder will be used by default
 # Every list item is a line
 script: []
+# Save artifacts from successful builds
+archive_artifacts:
+  # You can use wildcards like "module/dist/**/*.zip"
+  include: "module/dist/**/*.zip"
+  # Optionally specify the 'excludes' pattern, such as "foo/bar/**/*"
+  exclude: "foo/bar/**/*"
+  # Number of archives to keep
+  num_to_keep: 1
+# Use artifacts from another projects last successful build
+copy_artifacts:
+  # Name of project to copy artifacts from
+  project_name: name_of_project
+  # Directory to copy artifacts to. Artifact source dir will be used if omitted
+  target_dir: ~
+  # Relative path to artifacts to include, eg. module/dist/**/*.zip. All artifacts will be included if omitted
+  include
+    - **/*.zip
+  # Relative path to artifacts to exclude
+  exclude
+    - **/*.xml
+  # Ignores the directory structure of the artifacts
+  flatten: false
+  # Allows this build to continue even if no last successful build of the artifact project can be found
+  optional: false
+
 # Set to true if workspace should be removed before build
 clean_workspace: false
 
 # Settings for builder python
 # Module name to be used in python builder script, defaults to project name
-python_module: null
+python_module: ~
 # Source directory for use in python builder script
 python_source_directory: src
 # The only supported value is pypi.sunet.se that uploads *.egg and *.tar.gz from ./dist
 # Will check that builder python is used
-publish_over_ssh: null
+publish_over_ssh: ~
 
 # Settings for builder docker
 # Name that built docker image should have
 docker_name: sunet/name_of_repo
 # Set docker context directory if different from repo root
-docker_context_dir: null
+docker_context_dir: ~
 # Use managed script in the list where applicable
 managed_scripts: []
 
@@ -114,7 +139,7 @@ extra_jobs:
       - docker_tag.sh
     triggers:
       github_push: false
-      cron: null
+      cron: ~
     upstream:
       - eduid-am
 ```
