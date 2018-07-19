@@ -96,6 +96,8 @@ def load_env(repo) {
 
     // detecting builders
     if (env.builder != null && env.builders.size() == 0) {
+        out.println("DEPRECATION WARNING. Use builders.")
+        out.println("Builder ${env.builder} found for ${env.full_name}, added to builders")
         env.builders += env.builder
     }
 
