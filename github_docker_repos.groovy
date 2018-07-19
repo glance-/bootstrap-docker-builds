@@ -335,7 +335,7 @@ def add_job(env) {
             }
             logRotator {
                 // Rotate builds
-                //num_to_keep(10)
+                numToKeep(10)
                 // Rotate archived artifacts
                 if (env.archive_artifacts != null) {
                     num_to_keep = 1
