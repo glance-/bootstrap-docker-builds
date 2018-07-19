@@ -314,6 +314,10 @@ def add_job(env) {
                         out.println("Managed script docker_build_prep.sh enabled.")
                         managedScript('docker_build_prep.sh') {}
                     }
+                    tags = ["git-\${GIT_REVISION,length=8}", "ci-${env.name}-\${BUILD_NUMBER}"]
+                    if (env.docker_tags != null) {
+                        tags.addAll(env.docker_tags)
+                    }
                     dockerBuildAndPublish {
                         repositoryName(env.docker_name)
                         if (env.docker_context_dir != null) {
