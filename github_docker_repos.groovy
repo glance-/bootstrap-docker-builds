@@ -28,7 +28,7 @@ def _is_disabled(env) {
 }
 
 def _build_in_docker(env) {
-    if (env.build_in_docker.disable != null && !env.build_in_docker.disable.toBoolean()) {
+    if (_get_bool(env.build_in_docker.disable, false)) {
         out.println("${env.full_name} not building in docker. build_in_docker.disable: ${env.build_in_docker.disable}")
         return false
     } else if (env.builders == ["docker"]) {
@@ -42,12 +42,10 @@ def _build_in_docker(env) {
 }
 
 def _slack_enabled(env) {
-    if (env.slack.room != null) {
-        if (env.slack.disabled == null || !env.slack.disabled.toBoolean()) {
-            return true;
-        }
+    if (env.slack.room != null || _get_bool(env.slack.disabled, false)) {
+        return true
     }
-    return false;
+    return false
 }
 
 def _managed_script_enabled(env, script_name) {
@@ -169,7 +167,7 @@ def add_job(env) {
             }
             triggers {
                 // github_push is enabled by default
-                if (env.triggers.github_push == null || env.triggers.github_push.toBoolean()) {
+                if (_get_bool(env.triggers.github_push, true)) {
                     out.println("${env.full_name} using trigger github push")
                     githubPush()
                 }
@@ -250,7 +248,7 @@ def add_job(env) {
             wrappers {
                 build_in_docker = _build_in_docker(env)
                 // Clean workspace
-                if (env.clean_workspace != null && env.clean_workspace.toBoolean()) {
+                if (_get_bool(env.clean_workspace, false)) {
                     preBuildCleanup()
                 }
                 environmentVariables {
@@ -265,7 +263,8 @@ def add_job(env) {
                 // Build in docker
                 if (build_in_docker) {
                     buildInDocker {
-                        forcePull(true);
+                        forcePull(_get_bool(env.build_in_docker.force_pull, true))
+                        verbose(_get_bool(env.build_in_docker.verbose, false))
                         // Enable docker in docker
                         volume('/usr/bin/docker', '/usr/bin/docker')
                         volume('/var/run/docker.sock', '/var/run/docker.sock')
@@ -277,9 +276,6 @@ def add_job(env) {
                         } else if (env.build_in_docker.dockerfile != null) {
                             out.println("${env.full_name} building in docker image from Dockerfile ${env.build_in_docker.dockerfile}")
                             dockerfile('.', env.build_in_docker.dockerfile)
-                        }
-                        if (env.build_in_docker.verbose != null && env.build_in_docker.verbose.toBoolean()) {
-                            verbose(true)
                         }
                     }
                 }
@@ -343,11 +339,12 @@ def add_job(env) {
                             buildContext(env.docker_context_dir)
                         }
                         dockerRegistryURL("https://docker.sunet.se")
-                        tag("git-\${GIT_REVISION,length=8},ci-${env.name}-\${BUILD_NUMBER}")
-                        forcePull(true)
-                        noCache(true)
-                        forceTag(false)
-                        createFingerprints(true)
+                        tag(tags.join(","))
+                        forcePull(_get_bool(env.docker_force_pull, true))
+                        noCache(_get_bool(env.docker_no_cache, true))
+                        forceTag(_get_bool(env.docker_force_tag, false))
+                        createFingerprints(_get_bool(env.docker_create_fingerprints, true))
+                        skipTagAsLatest(_get_bool(env.docker_skip_tag_as_latest, false))
                     }
                     if (_managed_script_enabled(env, 'docker_tag.sh')) {
                         out.println("Managed script docker_tag.sh enabled.")
@@ -361,11 +358,7 @@ def add_job(env) {
                 numToKeep(10)
                 // Rotate archived artifacts
                 if (env.archive_artifacts != null) {
-                    num_to_keep = 1
-                    if (env.archive_artifacts.num_to_keep != null) {
-                        num_to_keep = env.archive_artifacts.num_to_keep
-                    }
-                    artifactNumToKeep(num_to_keep)
+                    artifactNumToKeep(_get_int(env.archive_artifacts.num_to_keep, 1))
                 }
             }
         }
