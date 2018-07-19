@@ -31,20 +31,33 @@ build_in_docker:
   dockerfile: ~
   # Verbose output if set to true
   verbose: false
+  # Update the source image before build
+  force_pull: true
 
-# String in builder will be added to the list builders
-builder: ~
 # Se below for available builders
 builders: []
+
+# If script is not empty the builder "script"  will be added
+# Every list item is a line
+script: []
+
+# Set environment variables that will be available during build
+# Default [environment variables](https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-belowJenkinsSetEnvironmentVariables)
+environment_variables:
+  VAR1: "something"
+  VAR2: "something else"
+
 # Will set items in the list as upstream
 upstream: []
 # Will set items in the list as downstream
 downstream: []
+
 triggers:
   # Build when push received to the master branch
   github_push: true
-  # Use cron syntax to periodically build project, eg. @daily
+  # Use cron syntax to periodically build project, eg. "@daily"
   cron: ~
+
 slack:
   # Default to send errors and back to normal to the devops channel
   disabled: false
@@ -53,9 +66,7 @@ slack:
   sendas: ~
 # Jabber room to send updates to
 jabber: ~
-# If script is not empty the script builder will be used by default
-# Every list item is a line
-script: []
+
 # Save artifacts from successful builds
 archive_artifacts:
   # You can use wildcards like "module/dist/**/*.zip"
@@ -96,8 +107,22 @@ publish_over_ssh: ~
 # Settings for builder docker
 # Name that built docker image should have
 docker_name: sunet/name_of_repo
+# Tags that should be used
+# "git-\${GIT_REVISION,length=8}", "ci-${env.name}-\${BUILD_NUMBER}" and "latest" will always be set
+docker_tags: []
 # Set docker context directory if different from repo root
 docker_context_dir: ~
+# Force rebuild
+docker_no_cache: true
+# Update the source image before build
+docker_force_pull: true
+# Force tag replacement when tag already exist
+docker_force_tag: false
+# Create fingerprints for the image
+docker_create_fingerprints: true
+# Does not tag the build as latest
+docker_skip_tag_as_latest: false
+
 # Use managed script in the list where applicable
 managed_scripts: []
 
@@ -119,6 +144,8 @@ builders:
   # Expects the Dockerfile to be in the project root, can be change by setting docker_context_dir
   # If managed_scripts docker_build_prep.sh and/or docker_tag.sh is set those will be used
   - docker
+  # Builder script will just the items in the script list as lines of commands
+  - script
 ```
 
 #### Extra jobs
@@ -146,3 +173,5 @@ extra_jobs:
 #### Inconsistency detected by ld.so
 If the a new build fails with an error message saying something about "Inconsistency detected by ld.so" use `unset LD_LIBRARY_PATH` before script build command.
 
+#### String transformations
+https://wiki.jenkins.io/display/JENKINS/Token+Macro+Plugin
