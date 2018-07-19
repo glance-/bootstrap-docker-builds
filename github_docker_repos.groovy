@@ -251,13 +251,15 @@ def add_job(env) {
                 if (_get_bool(env.clean_workspace, false)) {
                     preBuildCleanup()
                 }
-                environmentVariables {
-                    if (build_in_docker) {
-                        // For docker in docker but can create problems with building stuff
-                        envs(LD_LIBRARY_PATH: '/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/external_libs/lib64:/external_libs/usr/lib64')
-                    }
-                    if (env.environment_variables != null) {
-                        envs(env.environment_variables)
+                if (build_in_docker || env.environment_variables != null) {
+                    environmentVariables {
+                        if (build_in_docker) {
+                            // For docker in docker but can create problems with building stuff
+                            envs(LD_LIBRARY_PATH: '/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/external_libs/lib64:/external_libs/usr/lib64')
+                        }
+                        if (env.environment_variables != null) {
+                            envs(env.environment_variables)
+                        }
                     }
                 }
                 // Build in docker
