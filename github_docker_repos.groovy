@@ -57,6 +57,20 @@ def _managed_script_enabled(env, script_name) {
     return false
 }
 
+def _get_bool(value, default_value) {
+    if (value != null) {
+        return value.toBoolean()
+    }
+    return default_value.toBoolean()
+}
+
+def _get_int(value, default_value) {
+    if (value != null) {
+        return value.toInteger()
+    }
+    return default_value.toInteger()
+}
+
 def load_env(repo) {
     def name = repo.name
     def full_name = repo.full_name.toLowerCase()
