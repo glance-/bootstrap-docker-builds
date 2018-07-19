@@ -256,6 +256,9 @@ def add_job(env) {
                         // For docker in docker but can create problems with building stuff
                         envs(LD_LIBRARY_PATH: '/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/external_libs/lib64:/external_libs/usr/lib64')
                     }
+                    if (env.environment_variables != null) {
+                        envs(env.environment_variables)
+                    }
                 }
                 // Build in docker
                 if (build_in_docker) {
