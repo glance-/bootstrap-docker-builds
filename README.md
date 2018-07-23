@@ -112,7 +112,7 @@ python_module: ~
 python_source_directory: src
 # The only supported value is pypi.sunet.se that uploads *.egg and *.tar.gz from ./dist
 # Will check that builder python is used
-publish_over_ssh: ~
+publish_over_ssh: []
 
 # Settings for builder docker
 # Name that built docker image should have
