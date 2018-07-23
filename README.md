@@ -104,6 +104,11 @@ copy_artifacts:
 # Set to true if workspace should be removed before build
 clean_workspace: false
 
+# Script to run before build
+pre_build_script: []
+Script to run after build
+post_build_script: []
+
 # Settings for builder python
 # Module name to be used in python builder script, defaults to project name
 python_module: ~
