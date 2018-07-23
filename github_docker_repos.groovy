@@ -312,24 +312,6 @@ def add_job(env) {
                 }
             }
             steps {
-                // Mutually exclusive builder steps
-                if (env.builders.contains("script")) {
-                    shell(env.script.join('\n'))
-                    out.println('Builder "script" configured.')
-                } else if (env.builders.contains("make")) {
-                    shell("make clean && make && make test")
-                    out.println('Builder "make" configured.')
-                } else if (env.builders.contains("cmake")) {
-                    shell("/opt/builders/cmake")
-                    out.println('Builder "cmake" configured.')
-                } else if (env.builders.contains("python")) {
-                    python_module = env.name
-                    if (env.python_module != null) {
-                        python_module = env.python_module
-                    }
-                    shell("/opt/builders/python ${python_module} ${env.python_source_directory}")
-                    out.println('Builder "python" configured.')
-                }
                 // Copy artifacts from another project
                 if (env.copy_artifacts != null) {
                     out.println("Copy artifacts from ${env.copy_artifacts.project_name} configured")
@@ -353,6 +335,24 @@ def add_job(env) {
                             latestSuccessful(true)
                         }
                     }
+                }
+                // Mutually exclusive builder steps
+                if (env.builders.contains("script")) {
+                    shell(env.script.join('\n'))
+                    out.println('Builder "script" configured.')
+                } else if (env.builders.contains("make")) {
+                    shell("make clean && make && make test")
+                    out.println('Builder "make" configured.')
+                } else if (env.builders.contains("cmake")) {
+                    shell("/opt/builders/cmake")
+                    out.println('Builder "cmake" configured.')
+                } else if (env.builders.contains("python")) {
+                    python_module = env.name
+                    if (env.python_module != null) {
+                        python_module = env.python_module
+                    }
+                    shell("/opt/builders/python ${python_module} ${env.python_source_directory}")
+                    out.println('Builder "python" configured.')
                 }
                 // Builder docker
                 if (env.builders.contains("docker")) {
