@@ -8,6 +8,7 @@ def env = [
         'name'                   : name from github ex. eduid-am,
         'full_name'              : full name from github ex. sunet/eduid-am,
         'disabled'               : false,
+        'git'                    : [:],
         'python_source_directory': 'src',
         'slack'                  : ['room': 'devops', 'enable': true],
         'triggers'               : [:],
