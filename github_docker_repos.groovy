@@ -336,6 +336,11 @@ def add_job(env) {
                         }
                     }
                 }
+                // Pre-build script
+                if (env.pre_build_script != null) {
+                    shell(env.pre_build_script.join('\n'))
+                    out.println('Pre-build script configured.')
+                }
                 // Mutually exclusive builder steps
                 if (env.builders.contains("script")) {
                     shell(env.script.join('\n'))
@@ -382,6 +387,11 @@ def add_job(env) {
                         managedScript('docker_tag.sh') {}
                     }
                     out.println('Builder "docker" configured.')
+                }
+                // Post-build script
+                if (env.post_build_script != null) {
+                    shell(env.post_build_script.join('\n'))
+                    out.println('Post-build script configured.')
                 }
             }
             logRotator {
