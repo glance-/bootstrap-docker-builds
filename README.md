@@ -20,6 +20,15 @@ def env = [
 # Does not add a job if set to true
 disabled: false
 
+git:
+  # Branch to checkout, master if omitted
+  branch: master
+  extensions:
+    # Will make a shallow clone of the repo
+    shallow_clone: false
+    # Check out a local branch named as remote branch for use with "${GIT_LOCAL_BRANCH}"
+    checkout_local_branch: false
+
 # Settings for building in a docker container
 build_in_docker:
   # Using docker as only builder will disable build in docker
