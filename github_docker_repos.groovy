@@ -78,6 +78,7 @@ def load_env(repo) {
             'name'                   : name,
             'full_name'              : full_name,
             'disabled'               : false,
+            'git'                    : [:],
             'python_source_directory': 'src',
             'slack'                  : ['room': 'devops', 'disabled': false],
             'triggers'               : [:],
@@ -163,7 +164,35 @@ def add_job(env) {
         out.println("generating job for ${env.full_name} using builders: ${env.builders}")
         job(env.name) {
             scm {
-                git("https://github.com/${env.full_name}.git", "master")
+                git {
+                    remote {
+                        url("https://github.com/${env.full_name}.git")
+                    }
+                    // Branch
+                    if (env.git.branch == null) {
+                        out.println("${env.full_name} building branch master")
+                        branch("master")
+                    } else {
+                        out.println("${env.full_name} building branch ${env.git.branch}")
+                        branch(env.git.branch)
+                    }
+                    // Extensions
+                    if (env.git.extensions != null) {
+                        extensions {
+                            if (env.git.extensions.checkout_local_branch != null) {
+                                out.println("${env.full_name} checking out local branch")
+                                pruneBranches()
+                                localBranch("**")
+                            }
+                            if (env.git.extensions.shallow_clone != null) {
+                                cloneOptions {
+                                    out.println("${env.full_name} doing shallow clone")
+                                    shallow(true)
+                                }
+                            }
+                        }
+                    }
+                }
             }
             triggers {
                 // github_push is enabled by default
