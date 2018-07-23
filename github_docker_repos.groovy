@@ -243,14 +243,16 @@ def add_job(env) {
                 }
                 if (env.publish_over_ssh != null) {
                     env.publish_over_ssh.each {
-                        if (it == 'pypi.sunet.se' && env.builders.contains("python")) {
-                            out.println("Publishing over ssh to ${it} enabled.")
-                            publishOverSsh {
-                                alwaysPublishFromMaster(true)
-                                server('pypi.sunet.se') {
-                                    transferSet {
-                                        sourceFiles('dist/*.egg,dist/*.tar.gz')
-                                        removePrefix('dist')
+                        if (it == 'pypi.sunet.se') {
+                            if (env.builders.contains("python") || env.builders.contains("script")) {
+                                out.println("Publishing over ssh to ${it} enabled.")
+                                publishOverSsh {
+                                    alwaysPublishFromMaster(true)
+                                    server('pypi.sunet.se') {
+                                        transferSet {
+                                            sourceFiles('dist/*.egg,dist/*.tar.gz')
+                                            removePrefix('dist')
+                                        }
                                     }
                                 }
                             }
