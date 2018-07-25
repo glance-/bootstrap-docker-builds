@@ -77,6 +77,7 @@ def load_env(repo) {
     def env = [
             'name'                   : name,
             'full_name'              : full_name,
+            'repo_full_name'         : repo.full_name, // Jenkins is not case insensitive with push notifications
             'disabled'               : false,
             'git'                    : [:],
             'python_source_directory': 'src',
@@ -88,7 +89,7 @@ def load_env(repo) {
 
     // Load enviroment variables from repo yaml file
     try {
-        env << Yaml.load(try_get_file(_repo_file(full_name, "master", ".jenkins.yaml")))
+        env << Yaml.load(try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml")))
     } catch (FileNotFoundException ex) {
         out.println("No .jenkins.yaml for ${full_name}... will use defaults")
     }
@@ -106,7 +107,7 @@ def load_env(repo) {
         env.builders = []
 
         try {
-            if (!name.equals("bootstrap-docker-builds") && try_get_file(_repo_file(full_name, "master", "Dockerfile"))) {
+            if (!name.equals("bootstrap-docker-builds") && try_get_file(_repo_file(env.repo_full_name, "master", "Dockerfile"))) {
                 out.println("Found Dockerfile for ${env.full_name}. Adding \"docker\" to builders.")
                 env.builders += "docker"
             }
@@ -118,7 +119,7 @@ def load_env(repo) {
         } catch (FileNotFoundException ex) { }
 
         try {
-            if (try_get_file(_repo_file(full_name, "master", "setup.py")).contains("python")) {
+            if (try_get_file(_repo_file(env.repo_full_name, "master", "setup.py")).contains("python")) {
                 out.println("Found setup.py for ${env.full_name}. Adding \"python\" to builders.")
                 env.builders += "python"
             }
@@ -130,7 +131,7 @@ def load_env(repo) {
         }
 
         try {
-            if (try_get_file(_repo_file(full_name, "master", "CMakeLists.txt"))) {
+            if (try_get_file(_repo_file(env.repo_full_name, "master", "CMakeLists.txt"))) {
                 out.println("Found CMakeLists.txt for ${env.full_name}. Adding \"cmake\" to builders.")
                 env.builders += "cmake"
             }
@@ -139,7 +140,7 @@ def load_env(repo) {
 
     // detecting wrappers
     try {
-        if (try_get_file(_repo_file(full_name, "master", "Dockerfile.jenkins")).contains("FROM")) {
+        if (try_get_file(_repo_file(env.repo_full_name, "master", "Dockerfile.jenkins")).contains("FROM")) {
             out.println("Found Dockerfile.jenkins for ${env.full_name}. Will be used for build.")
             env.build_in_docker.dockerfile = "Dockerfile.jenkins"
         }
@@ -169,7 +170,7 @@ def add_job(env) {
             scm {
                 git {
                     remote {
-                        url("https://github.com/${env.full_name}.git")
+                        url("https://github.com/${env.repo_full_name}.git")
                     }
                     // Branch
                     if (env.git.branch == null) {
