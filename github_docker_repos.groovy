@@ -70,13 +70,10 @@ def _get_int(value, default_value) {
 }
 
 def load_env(repo) {
-    def name = repo.name
-    def full_name = repo.full_name.toLowerCase()
-
     // Default environment
     def env = [
-            'name'                   : name,
-            'full_name'              : full_name,
+            'name'                   : repo.name,
+            'full_name'              : repo.full_name.toLowerCase(),
             'repo_full_name'         : repo.full_name, // Jenkins is not case insensitive with push notifications
             'disabled'               : false,
             'git'                    : [:],
@@ -91,7 +88,7 @@ def load_env(repo) {
     try {
         env << Yaml.load(try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml")))
     } catch (FileNotFoundException ex) {
-        out.println("No .jenkins.yaml for ${full_name}... will use defaults")
+        out.println("No .jenkins.yaml for ${env.full_name}... will use defaults")
     }
 
     // detecting builders
@@ -107,14 +104,14 @@ def load_env(repo) {
         env.builders = []
 
         try {
-            if (!name.equals("bootstrap-docker-builds") && try_get_file(_repo_file(env.repo_full_name, "master", "Dockerfile"))) {
+            if (!env.name.equals("bootstrap-docker-builds") && try_get_file(_repo_file(env.repo_full_name, "master", "Dockerfile"))) {
                 out.println("Found Dockerfile for ${env.full_name}. Adding \"docker\" to builders.")
                 env.builders += "docker"
             }
 
             if (env.docker_name == null) {
-                out.println("No docker_name set using ${env.full_name}.")
-                env.docker_name = full_name
+                out.println("No docker_name set. Using ${env.full_name}.")
+                env.docker_name = env.full_name
             }
         } catch (FileNotFoundException ex) { }
 
