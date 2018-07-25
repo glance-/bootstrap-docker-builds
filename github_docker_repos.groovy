@@ -163,6 +163,9 @@ def add_job(env) {
     if (env.builders.size() > 0 && !_is_disabled(env)) {
         out.println("generating job for ${env.full_name} using builders: ${env.builders}")
         job(env.name) {
+            properties {
+                githubProjectUrl("https://github.com/${env.repo_full_name}")
+            }
             scm {
                 git {
                     remote {
