@@ -459,9 +459,9 @@ orgs.each {
                         hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
                         env = load_env(it)
                         add_job(env)
-                        cloned_env = env.clone()  // No looping over changing data
                         if (env.extra_jobs != null) {
                             env.extra_jobs.each {
+                                cloned_env = env.clone()  // No looping over changing data
                                 cloned_env << it
                                 out.println("found extra job: ${cloned_env.name}")
                                 add_job(cloned_env)
