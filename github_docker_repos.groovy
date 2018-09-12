@@ -81,7 +81,12 @@ def load_env(repo) {
             'slack'                  : ['room': 'devops', 'disabled': false],
             'triggers'               : [:],
             'builders'               : [],
-            'build_in_docker'        : ['disabled': false, 'dockerfile': null, 'image': null]
+            'build_in_docker'        : [
+                    'disabled': false,
+                    'dockerfile': null,
+                    'image': null,
+                    'start_command': "/run.sh"
+            ]
     ]
 
     // Load enviroment variables from repo yaml file
@@ -304,6 +309,7 @@ def add_job(env) {
                         volume('/var/run/docker.sock', '/var/run/docker.sock')
                         volume('/lib/x86_64-linux-gnu', '/external_libs/lib64')
                         volume('/usr/lib/x86_64-linux-gnu', '/external_libs/usr/lib64')
+                        startCommand(env.build_in_docker.start_command)
                         if (env.build_in_docker.image != null) {
                             out.println("${env.full_name} building in docker image ${env.build_in_docker.image}")
                             image(env.build_in_docker.image)
