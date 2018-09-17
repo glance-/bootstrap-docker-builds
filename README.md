@@ -13,6 +13,12 @@ def env = [
         'slack'                  : ['room': 'devops', 'enable': true],
         'triggers'               : [:],
         'builders'               : []
+        'build_in_docker'        : [
+                'disabled': false,
+                'dockerfile': null,
+                'image': null,
+                'start_command': "/run.sh"
+        ]
     ]
 ```
 
@@ -43,6 +49,8 @@ build_in_docker:
   verbose: false
   # Update the source image before build
   force_pull: true
+  # Command used to start container for build
+  start_command: /run.sh
 
 # Se below for available builders
 builders: []
