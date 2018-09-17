@@ -15,6 +15,13 @@ import org.ho.yaml.Yaml
 import java.io.FileNotFoundException
 import jenkins.model.Jenkins
 
+// Used for merging .jenkins.yaml in to default env
+Map.metaClass.addNested = { Map rhs ->
+    def lhs = delegate
+    rhs.each { k, v -> lhs[k] = lhs[k] in Map ? lhs[k].addNested(v) : v }
+    lhs
+}
+
 def try_get_file(url) {
     return url.toURL().getText()
 }
@@ -91,7 +98,8 @@ def load_env(repo) {
 
     // Load enviroment variables from repo yaml file
     try {
-        env << Yaml.load(try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml")))
+        repo_env = Yaml.load(try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml")))
+        env.addNested(repo_env)
     } catch (FileNotFoundException ex) {
         out.println("No .jenkins.yaml for ${env.full_name}... will use defaults")
     }
