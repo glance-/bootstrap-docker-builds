@@ -264,7 +264,7 @@ def add_job(env) {
                                     alwaysPublishFromMaster(true)
                                     server('pypi.sunet.se') {
                                         transferSet {
-                                            sourceFiles('dist/*.egg,dist/*.tar.gz')
+                                            sourceFiles('dist/*.egg,dist/*.tar.gz,dist/*.whl')
                                             removePrefix('dist')
                                         }
                                     }
