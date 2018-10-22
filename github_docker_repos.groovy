@@ -85,7 +85,7 @@ def load_env(repo) {
             'disabled'               : false,
             'git'                    : [:],
             'python_source_directory': 'src',
-            'slack'                  : ['room': 'devops', 'disabled': false],
+            'slack'                  : ['room': 'devops-builds', 'disabled': false],
             'triggers'               : [:],
             'builders'               : [],
             'build_in_docker'        : [
