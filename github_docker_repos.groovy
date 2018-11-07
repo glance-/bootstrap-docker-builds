@@ -467,22 +467,28 @@ orgs.each {
 
                 repos.each {
                     out.println("repo: ${it.name}")
-                    def name = it.name
-                    def full_name = it.full_name.toLowerCase()
-                    if (name != null && full_name != null && name != "null" && full_name != "null") {
-                        hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
-                        env = load_env(it)
-                        add_job(env)
-                        if (env.extra_jobs != null) {
-                            env.extra_jobs.each {
-                                cloned_env = env.clone()  // No looping over changing data
-                                cloned_env << it
-                                out.println("found extra job: ${cloned_env.name}")
-                                add_job(cloned_env)
+                    try {
+                        def name = it.name
+                        def full_name = it.full_name.toLowerCase()
+                        if (name != null && full_name != null && name != "null" && full_name != "null") {
+                            hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
+                            env = load_env(it)
+                            add_job(env)
+                            if (env.extra_jobs != null) {
+                                env.extra_jobs.each {
+                                    cloned_env = env.clone()  // No looping over changing data
+                                    cloned_env << it
+                                    out.println("found extra job: ${cloned_env.name}")
+                                    add_job(cloned_env)
+                                }
                             }
                         }
+                        out.println("---- EOJ ----")
+                    } catch (SocketException ex) {
+                        out.println("Failed to connect to github")
+                        out.println("SocketException:")
+                        out.println(ex)
                     }
-                    out.println("---- EOJ ----")
                 }
             }
         }
