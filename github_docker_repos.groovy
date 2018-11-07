@@ -485,9 +485,10 @@ orgs.each {
                         }
                         out.println("---- EOJ ----")
                     } catch (SocketException ex) {
-                        out.println("Failed to connect to github")
+                        out.println("---- Failed to connect to github ----")
                         out.println("SocketException:")
-                        out.println(ex)
+                        out.println(org.codehaus.groovy.runtime.StackTraceUtils.printSanitizedStackTrace(ex))
+                        out.println("---- Trying next repo ----")
                     }
                 }
             }
