@@ -22,8 +22,27 @@ Map.metaClass.addNested = { Map rhs ->
     lhs
 }
 
+// https://stackoverflow.com/questions/7087185/retry-after-exception-in-groovy
+def retry(int times = 5, Closure errorHandler = {e-> out.println(e.message)}
+          , Closure body) {
+    int retries = 0
+    def exceptions = []
+    while(retries++ < times) {
+        try {
+            return body.call()
+        } catch(e) {
+            exceptions << e
+            errorHandler.call(e)
+        }
+        sleep(retries * 1000)  // Incremental backoff, +1s per try
+    }
+    throw new RuntimeException("Failed after $times retries")
+}
+
 def try_get_file(url) {
-    return url.toURL().getText()
+    retry(10) {
+        return url.toURL().getText()
+    }
 }
 
 def _repo_file(full_name, branch, fn) {
@@ -484,12 +503,10 @@ orgs.each {
                             }
                         }
                         out.println("---- EOJ ----")
-                    } catch (SocketException ex) {
-                        out.println("---- Failed to connect to github ----")
-                        out.println("SocketException:")
+                    } catch (RuntimeException ex) {
+                        out.println("---- Failed to process ${it.name} ----")
                         out.println(ex.toString());
                         out.println(ex.getMessage());
-                        out.println(ex.getStackTrace());
                         out.println("---- Trying next repo ----")
                     }
                 }
