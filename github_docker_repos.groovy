@@ -23,24 +23,24 @@ Map.metaClass.addNested = { Map rhs ->
 }
 
 // https://stackoverflow.com/questions/7087185/retry-after-exception-in-groovy
-def retry(int times = 5, Closure errorHandler = {e-> out.println(e.message)}
+def retry_get_file(int times = 5, Closure errorHandler = {e-> out.println(e.message)}
           , Closure body) {
     int retries = 0
     def exceptions = []
     while(retries++ < times) {
         try {
             return body.call()
-        } catch(e) {
+        } catch(SocketException e) {
             exceptions << e
             errorHandler.call(e)
+            sleep(retries * 1000)  // Incremental backoff, +1s per try
         }
-        sleep(retries * 1000)  // Incremental backoff, +1s per try
     }
-    throw new RuntimeException("Failed after $times retries")
+    throw new RuntimeException("Failed getting file after $times retries")
 }
 
 def try_get_file(url) {
-    retry(10) {
+    retry_get_file(10) {
         return url.toURL().getText()
     }
 }
