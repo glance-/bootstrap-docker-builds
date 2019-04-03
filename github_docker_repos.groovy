@@ -207,9 +207,8 @@ def add_job(env) {
                         branch(env.git.branch)
                     } else if (env.git.branches != null) {
                         out.println("${env.full_name} building branches ${env.git.branches}")
-                        // Explicitly convert branches to class [Ljava.lang.String;
-                        def branches = env.git.branches as String[]
-                        branches(branches)
+                        // Explicitly convert branches to class String[]
+                        branches(env.git.branches as String[])
                     } else {
                         out.println("${env.full_name} building branch master")
                         branch("master")
