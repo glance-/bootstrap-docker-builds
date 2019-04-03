@@ -30,8 +30,8 @@ disabled: false
 git:
   # Branch to checkout, master if omitted
   branch: master
-  # Multiple branches can be built by providing a branch names separated by space in branches
-  branches: null
+  # Multiple branches can be built by providing branch names as a list of strings to branches
+  branches: []
   extensions:
     # Will make a shallow clone of the repo
     shallow_clone: false
