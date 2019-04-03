@@ -202,12 +202,15 @@ def add_job(env) {
                         url("https://github.com/${env.repo_full_name}.git")
                     }
                     // Branch
-                    if (env.git.branch == null) {
+                    if (env.git.branch != null) {
                         out.println("${env.full_name} building branch master")
                         branch("master")
+                    } else if (env.git.branches != null) {
+                        out.println("${env.full_name} building branches ${env.git.branches}")
+                        branches(env.git.branches)
                     } else {
-                        out.println("${env.full_name} building branch ${env.git.branch}")
-                        branch(env.git.branch)
+                        out.println("${env.full_name} building branch master")
+                        branch("master")
                     }
                     // Extensions
                     if (env.git.extensions != null) {
