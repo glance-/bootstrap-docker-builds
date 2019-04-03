@@ -203,7 +203,7 @@ def add_job(env) {
                     }
                     // Branch
                     if (env.git.branch != null) {
-                        out.println("${env.full_name} building branch master")
+                        out.println("${env.full_name} building branch ${env.git.branch}")
                         branch("master")
                     } else if (env.git.branches != null) {
                         out.println("${env.full_name} building branches ${env.git.branches}")
