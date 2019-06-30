@@ -448,7 +448,7 @@ def add_job(env) {
     }
 }
 
-def orgs = ['SUNET']
+def orgs = ['SUNET','thiss.io']
 def url = "https://api.github.com/"
 
 orgs.each {
