@@ -8,6 +8,7 @@
         @Grab(group = 'org.jyaml', module = 'jyaml', version = '1.3')
 )
 import groovyx.net.http.HTTPBuilder
+import groovyx.net.http.HttpResponseException
 import groovy.json.JsonSlurper
 import static groovyx.net.http.Method.GET
 import static groovyx.net.http.ContentType.JSON
@@ -456,8 +457,6 @@ orgs.each {
     def next_query = null
     def api = new HTTPBuilder(url)
     try {
-
-
         while (next_path != null) {
             api.request(GET, JSON) { req ->
                 uri.path = next_path
