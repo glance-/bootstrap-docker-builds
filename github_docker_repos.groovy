@@ -524,5 +524,6 @@ orgs.each {
         out.println("Query: ${next_query}")
         out.println(ex.toString());
         out.println(ex.getMessage());
+        System.exit(1)
     }
 }
