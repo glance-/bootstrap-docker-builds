@@ -455,68 +455,75 @@ orgs.each {
     def next_path = "/orgs/${it}/repos"
     def next_query = null
     def api = new HTTPBuilder(url)
+    try {
 
-    while (next_path != null) {
-        out.println("---- Next path ${next_path} ----")
-        out.println("---- Next query ${next_query} ----")
-        api.request(GET, JSON) { req ->
-            uri.path = next_path
-            if (next_query != null) {
-                uri.query = next_query
-            }
-            headers.'User-Agent' = 'Mozilla/5.0'
 
-            response.success = { resp, reader ->
-                assert resp.status == 200
+        while (next_path != null) {
+            api.request(GET, JSON) { req ->
+                uri.path = next_path
+                if (next_query != null) {
+                    uri.query = next_query
+                }
+                headers.'User-Agent' = 'Mozilla/5.0'
 
-                def repos = reader
-                next_path = null
-                if (resp.headers.'Link' != null) {
-                    resp.headers.'Link'.split(',').each {
-                        it = it.trim()
-                        def m = (it =~ /<https:\/\/api.github.com([^>]+)>; rel="next"/)
-                        if (m.matches()) {
-                            def a = m[0][1].split('\\?')
-                            next_path = a[0]
-                            next_query = null
-                            if (a.length == 2) {
-                                next_query = [:]
-                                a[1].split('&').each {
-                                    def av = it.split('=')
-                                    next_query[av[0]] = av[1]
+                response.success = { resp, reader ->
+                    assert resp.status == 200
+
+                    def repos = reader
+                    next_path = null
+                    if (resp.headers.'Link' != null) {
+                        resp.headers.'Link'.split(',').each {
+                            it = it.trim()
+                            def m = (it =~ /<https:\/\/api.github.com([^>]+)>; rel="next"/)
+                            if (m.matches()) {
+                                def a = m[0][1].split('\\?')
+                                next_path = a[0]
+                                next_query = null
+                                if (a.length == 2) {
+                                    next_query = [:]
+                                    a[1].split('&').each {
+                                        def av = it.split('=')
+                                        next_query[av[0]] = av[1]
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                repos.each {
-                    out.println("repo: ${it.name}")
-                    try {
-                        def name = it.name
-                        def full_name = it.full_name.toLowerCase()
-                        if (name != null && full_name != null && name != "null" && full_name != "null") {
-                            hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
-                            env = load_env(it)
-                            add_job(env)
-                            if (env.extra_jobs != null) {
-                                env.extra_jobs.each {
-                                    cloned_env = env.clone()  // No looping over changing data
-                                    cloned_env << it
-                                    out.println("found extra job: ${cloned_env.name}")
-                                    add_job(cloned_env)
+                    repos.each {
+                        out.println("repo: ${it.name}")
+                        try {
+                            def name = it.name
+                            def full_name = it.full_name.toLowerCase()
+                            if (name != null && full_name != null && name != "null" && full_name != "null") {
+                                hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
+                                env = load_env(it)
+                                add_job(env)
+                                if (env.extra_jobs != null) {
+                                    env.extra_jobs.each {
+                                        cloned_env = env.clone()  // No looping over changing data
+                                        cloned_env << it
+                                        out.println("found extra job: ${cloned_env.name}")
+                                        add_job(cloned_env)
+                                    }
                                 }
                             }
+                            out.println("---- EOJ ----")
+                        } catch (RuntimeException ex) {
+                            out.println("---- Failed to process ${it.name} ----")
+                            out.println(ex.toString());
+                            out.println(ex.getMessage());
+                            out.println("---- Trying next repo ----")
                         }
-                        out.println("---- EOJ ----")
-                    } catch (RuntimeException ex) {
-                        out.println("---- Failed to process ${it.name} ----")
-                        out.println(ex.toString());
-                        out.println(ex.getMessage());
-                        out.println("---- Trying next repo ----")
                     }
                 }
             }
         }
+    } catch (HttpResponseException ex) {
+        out.println("---- Bad response from: ----")
+        out.println("Path: ${next_path}")
+        out.println("Query: ${next_query}")
+        out.println(ex.toString());
+        out.println(ex.getMessage());
     }
 }
