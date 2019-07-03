@@ -457,6 +457,8 @@ orgs.each {
     def api = new HTTPBuilder(url)
 
     while (next_path != null) {
+        out.println("---- Next path ${next_path} ----")
+        out.println("---- Next query ${next_query} ----")
         api.request(GET, JSON) { req ->
             uri.path = next_path
             if (next_query != null) {
