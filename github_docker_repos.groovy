@@ -501,3 +501,14 @@ for (org in orgs) {
         out.println(ex.getMessage());
     }
 }
+
+for (managed_script in ["docker_build_prep.sh", "docker_tag.sh"]) {
+    configFiles {
+        scriptConfig {
+            id(managed_script)
+            name(managed_script)
+            comment("Script managed from job-dsl, don't edit in jenkins.")
+            content(readFileFromWorkspace("managed_scripts/" + managed_script))
+        }
+    }
+}
