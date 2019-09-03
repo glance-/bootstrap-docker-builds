@@ -1,3 +1,4 @@
+// vim: ts=4 sts=4 sw=4 et
 @Grapes(
         @Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6')
 )
@@ -24,8 +25,7 @@ Map.metaClass.addNested = { Map rhs ->
 }
 
 // https://stackoverflow.com/questions/7087185/retry-after-exception-in-groovy
-def retry_get_file(int times = 5, Closure errorHandler = {e-> out.println(e.message)}
-          , Closure body) {
+def retry_get_file(int times = 5, Closure errorHandler = {e-> out.println(e.message)}, Closure body) {
     int retries = 0
     def exceptions = []
     while(retries++ < times) {
@@ -99,21 +99,21 @@ def _get_int(value, default_value) {
 def load_env(repo) {
     // Default environment
     def env = [
-            'name'                   : repo.name,
-            'full_name'              : repo.full_name.toLowerCase(),
-            'repo_full_name'         : repo.full_name, // Jenkins is not case insensitive with push notifications
-            'disabled'               : false,
-            'git'                    : [:],
-            'python_source_directory': 'src',
-            'slack'                  : ['room': 'devops-builds', 'disabled': false],
-            'triggers'               : [:],
-            'builders'               : [],
-            'build_in_docker'        : [
-                    'disabled': false,
-                    'dockerfile': null,
-                    'image': null,
-                    'start_command': "/run.sh"
-            ]
+        'name'                   : repo.name,
+        'full_name'              : repo.full_name.toLowerCase(),
+        'repo_full_name'         : repo.full_name, // Jenkins is not case insensitive with push notifications
+        'disabled'               : false,
+        'git'                    : [:],
+        'python_source_directory': 'src',
+        'slack'                  : ['room': 'devops-builds', 'disabled': false],
+        'triggers'               : [:],
+        'builders'               : [],
+        'build_in_docker'        : [
+            'disabled': false,
+            'dockerfile': null,
+            'image': null,
+            'start_command': "/run.sh"
+        ]
     ]
 
     // Load enviroment variables from repo yaml file
