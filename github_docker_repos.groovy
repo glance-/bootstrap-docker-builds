@@ -311,15 +311,9 @@ def add_job(env) {
                 if (_get_bool(env.clean_workspace, false)) {
                     preBuildCleanup()
                 }
-                if (build_in_docker || env.environment_variables != null) {
+                if (env.environment_variables != null) {
                     environmentVariables {
-                        if (build_in_docker) {
-                            // For docker in docker but can create problems with building stuff
-                            envs(LD_LIBRARY_PATH: '/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/external_libs/lib64:/external_libs/usr/lib64')
-                        }
-                        if (env.environment_variables != null) {
-                            envs(env.environment_variables)
-                        }
+                        envs(env.environment_variables)
                     }
                 }
                 // Build in docker
@@ -330,8 +324,6 @@ def add_job(env) {
                         // Enable docker in docker
                         volume('/usr/bin/docker', '/usr/bin/docker')
                         volume('/var/run/docker.sock', '/var/run/docker.sock')
-                        volume('/lib/x86_64-linux-gnu', '/external_libs/lib64')
-                        volume('/usr/lib/x86_64-linux-gnu', '/external_libs/usr/lib64')
                         startCommand(env.build_in_docker.start_command)
                         if (env.build_in_docker.image != null) {
                             out.println("${env.full_name} building in docker image ${env.build_in_docker.image}")
