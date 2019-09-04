@@ -229,7 +229,8 @@ def add_job(env) {
                     out.println("${env.full_name} using trigger github push")
                     githubPush()
                 }
-                if (env.triggers.cron != null) {
+                // Workaround org.ho.yaml.Yaml bug that resolvs null to the string null
+                if (env.triggers.cron != null && env.triggers.cron != "null") {
                     out.println("${env.full_name} using trigger cron: ${env.triggers.cron}")
                     cron(env.triggers.cron)
                 }
