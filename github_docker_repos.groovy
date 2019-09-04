@@ -240,7 +240,7 @@ def add_job(env) {
                 }
             }
             publishers {
-                if (_slack_enabled(env)) {
+                if (_slack_enabled(env) && "${SLACK_TOKEN}" != "") {
                     out.println("${env.full_name} using Slack notification to: ${env.slack.room}")
                     slackNotifier {
                         teamDomain('SUNET')
