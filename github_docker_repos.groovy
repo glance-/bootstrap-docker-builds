@@ -15,7 +15,6 @@ import static groovyx.net.http.Method.GET
 import static groovyx.net.http.ContentType.JSON
 import org.ho.yaml.Yaml
 import java.io.FileNotFoundException
-import jenkins.model.Jenkins
 
 // Used for merging .jenkins.yaml in to default env
 Map.metaClass.addNested = { Map rhs ->
