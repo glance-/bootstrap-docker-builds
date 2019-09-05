@@ -1,6 +1,6 @@
 // vim: ts=4 sts=4 sw=4 et
 import groovy.json.JsonSlurper
-import org.yaml.snakeyaml.Yaml
+import org.ho.yaml.Yaml
 // When we're at groovy 3.0
 //import groovy.yaml.YamlSlurper
 import java.io.FileNotFoundException
@@ -229,7 +229,8 @@ def add_job(env) {
                     out.println("${env.full_name} using trigger github push")
                     githubPush()
                 }
-                if (env.triggers.cron != null) {
+                // Workaround org.ho.yaml.Yaml bug that resolvs null to the string null
+                if (env.triggers.cron != null && env.triggers.cron != "null") {
                     out.println("${env.full_name} using trigger cron: ${env.triggers.cron}")
                     cron(env.triggers.cron)
                 }
