@@ -187,9 +187,58 @@ def load_env(repo) {
 def add_job(env, is_dev_mode) {
     if (env.builders.size() > 0 && !_is_disabled(env)) {
         out.println("generating job for ${env.full_name} using builders: ${env.builders}")
+
+        def build_in_docker = _build_in_docker(env)
+        def cloud = true
+
         job(env.name) {
             properties {
                 githubProjectUrl("https://github.com/${env.repo_full_name}")
+                // Build in docker
+                if (cloud && build_in_docker) {
+                    dockerJobTemplateProperty {
+                        cloudname("")  // Empty means pick one.
+                        template {
+                            // Name the container after what we build in it
+                            name("docker-${env.full_name}")
+                            pullStrategy(is_dev_mode ? "PULL_NEVER" : (env.build_in_docker.force_pull ? "PULL_ALWAYS" : "PULL_LATEST") )
+                            // Connect as whatever the template tries to run as
+                            connector {
+                                attach {
+                                    user("")
+                                }
+                            }
+                            labelString('')
+                            // TODO: Implement verbose?
+                            //verbose(_get_bool(env.build_in_docker.verbose, false))
+                            // Let global limit handle this
+                            instanceCapStr('0')
+                            dockerTemplateBase {
+                                dockerTemplateBase {
+                                    // Enable docker in docker
+                                    volumesString(
+                                        '/usr/bin/docker:/usr/bin/docker:ro\n' +
+                                        '/var/run/docker.sock:/var/run/docker.sock'
+                                    )
+                                    dockerCommand(env.build_in_docker.start_command)
+                                    tty(true)
+                                    if (env.build_in_docker.image != null) {
+                                        out.println("${env.full_name} building in docker image ${env.build_in_docker.image}")
+                                        image(env.build_in_docker.image)
+                                    } else if (env.build_in_docker.dockerfile != null) {
+                                        out.println("${env.full_name} building in docker image from Dockerfile ${env.build_in_docker.dockerfile}")
+                                        // FIXME!
+                                        // pkcs11-proxy is the only one using this.
+                                        // This can be done in pipeline, but in docker-cloud?
+                                        //dockerfile('.', env.build_in_docker.dockerfile)
+                                        out.println("Doesn't support Dockerfile yet, so use the regular image for now")
+                                        image("docker.sunet.se/sunet/docker-jenkins-job")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             scm {
                 git {
@@ -307,9 +356,7 @@ def add_job(env, is_dev_mode) {
                     }
                 }
             }
-
             wrappers {
-                build_in_docker = _build_in_docker(env)
                 // Clean workspace
                 if (_get_bool(env.clean_workspace, false)) {
                     preBuildCleanup()
@@ -320,7 +367,7 @@ def add_job(env, is_dev_mode) {
                     }
                 }
                 // Build in docker
-                if (build_in_docker) {
+                if (!cloud && build_in_docker) {
                     buildInDocker {
                         forcePull(is_dev_mode ? false : _get_bool(env.build_in_docker.force_pull, true))
                         verbose(_get_bool(env.build_in_docker.verbose, false))
