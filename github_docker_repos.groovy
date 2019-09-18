@@ -396,6 +396,15 @@ def add_job(env, is_dev_mode) {
                     if (env.docker_tags != null) {
                         tags.addAll(env.docker_tags)
                     }
+
+                    if (_managed_script_enabled(env, 'docker_tag.sh')) {
+                        out.println("Managed script docker_tag.sh enabled.")
+                        out.println("Not using docker_tag.sh, having it done by dockerBuildAndPublish instead")
+                        // docker_tag is buggy and trying to deterministically find a docker image
+                        // based on a git sha. This detonates if it sees other images built on the same sha,
+                        // so implement the same functionallity here.
+                        tags.add("branch-\${GIT_BRANCH#origin/}")
+                    }
                     dockerBuildAndPublish {
                         repositoryName(env.docker_name)
                         if (env.docker_context_dir != null) {
@@ -408,10 +417,6 @@ def add_job(env, is_dev_mode) {
                         forceTag(_get_bool(env.docker_force_tag, false))
                         createFingerprints(_get_bool(env.docker_create_fingerprints, true))
                         skipTagAsLatest(_get_bool(env.docker_skip_tag_as_latest, false))
-                    }
-                    if (_managed_script_enabled(env, 'docker_tag.sh')) {
-                        out.println("Managed script docker_tag.sh enabled.")
-                        managedScript('docker_tag.sh') {}
                     }
                     out.println('Builder "docker" configured.')
                 }
@@ -529,7 +534,7 @@ for (org in orgs) {
     }
 }
 
-for (managed_script in ["docker_build_prep.sh", "docker_tag.sh"]) {
+for (managed_script in ["docker_build_prep.sh"]) {
     configFiles {
         scriptConfig {
             id(managed_script)
