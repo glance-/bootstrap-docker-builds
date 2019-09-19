@@ -499,7 +499,6 @@ for (org in orgs) {
     } catch (FileNotFoundException | IOException ex) {
         out.println("---- Bad response from: ----")
         out.println("Path: ${next_path}")
-        out.println("Query: ${next_query}")
         out.println(ex.toString());
         out.println(ex.getMessage());
     }
