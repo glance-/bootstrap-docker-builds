@@ -438,10 +438,32 @@ def add_job(env) {
 def orgs = ['SUNET','TheIdentitySelector']
 def api = "https://api.github.com"
 
+if (binding.hasVariable("ORGS") && "${ORGS}" != "") {
+    orgs = new JsonSlurper().parseText("${ORGS}")
+    out.println("orgs overridden by env: ${ORGS}")
+}
+def ONLY_REPOS = null
+if (binding.hasVariable("REPOS") && "${REPOS}" != "") {
+    ONLY_REPOS = new JsonSlurper().parseText("${REPOS}")
+    out.println("repos overridden by env: ${REPOS}")
+}
+def is_dev_mode = false
+if (binding.hasVariable("DEV_MODE") && "${DEV_MODE}" != "" && DEV_MODE.toBoolean()) {
+    out.println("DEV_MODE detected, will act accordingly")
+    is_dev_mode = true
+}
+
 for (org in orgs) {
     //TODO: Should we set a per_page=100 (100 is max) to decrese the number of api calls,
     // So we don't get ratelimited as easy?
     def next_path = "/orgs/${org}/repos"
+    def c = new URL(api + "/orgs/${org}").openConnection()
+    // Is this a org?
+    // If not, try the users endpoint
+    if (c.getResponseCode() == 404) {
+        out.println("${org} is not a org, guessing its a user")
+        next_path = "/users/${org}/repos"
+    }
     try {
         while (next_path != null) {
             def url = new URL(api + next_path)
@@ -471,6 +493,8 @@ for (org in orgs) {
             }
 
             repos.each {
+                if (ONLY_REPOS && !ONLY_REPOS.contains(it.name))
+                    return // return is like continue in a closure
                 out.println("repo: ${it.name}")
                 try {
                     def name = it.name
