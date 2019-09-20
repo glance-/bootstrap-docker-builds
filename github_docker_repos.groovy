@@ -501,6 +501,7 @@ for (org in orgs) {
         out.println("Path: ${next_path}")
         out.println(ex.toString());
         out.println(ex.getMessage());
+        throw ex
     }
 }
 
