@@ -7,10 +7,9 @@ import java.io.FileNotFoundException
 import java.io.IOException
 
 // Used for merging .jenkins.yaml in to default env
-Map.metaClass.addNested = { Map rhs ->
-    def lhs = delegate
-    rhs.each { k, v -> lhs[k] = lhs[k] in Map ? lhs[k].addNested(v) : v }
-    lhs
+def addNested(lhs, rhs) {
+    rhs.each { k, v -> lhs[k] = lhs[k] in Map ? addNested(lhs[k], v) : v }
+    return lhs
 }
 
 // https://stackoverflow.com/questions/7087185/retry-after-exception-in-groovy
@@ -113,7 +112,7 @@ def load_env(repo) {
         if (yaml_text != fixed_yaml_text)
             out.println("FIXME: This repo contains non compliant yaml")
         def repo_env = new Yaml().load(fixed_yaml_text)
-        env.addNested(repo_env)
+        env = addNested(env, repo_env)
     } catch (FileNotFoundException ex) {
         out.println("No .jenkins.yaml for ${env.full_name}... will use defaults")
     }
