@@ -107,9 +107,12 @@ def load_env(repo) {
 
     // Load enviroment variables from repo yaml file
     try {
-        // Groovy 3.0
-        //repo_env = YamlSlurper.parse(try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml")))
-        repo_env = new Yaml().load(try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml")))
+        def yaml_text = try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml"))
+        // Mangle broken yaml into something a propper yaml parser stands
+        def fixed_yaml_text = yaml_text.replaceAll('cron: (@\\w+)', 'cron: "$1"')
+        if (yaml_text != fixed_yaml_text)
+            out.println("FIXME: This repo contains non compliant yaml")
+        def repo_env = new Yaml().load(fixed_yaml_text)
         env.addNested(repo_env)
     } catch (FileNotFoundException ex) {
         out.println("No .jenkins.yaml for ${env.full_name}... will use defaults")
