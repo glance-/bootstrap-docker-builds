@@ -1,20 +1,10 @@
-@Grapes(
-        @Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6')
-)
-@Grapes(
-        @Grab(group = 'org.codehaus.groovy', module = 'groovy-json', version = '2.4.12')
-)
-@Grapes(
-        @Grab(group = 'org.jyaml', module = 'jyaml', version = '1.3')
-)
-import groovyx.net.http.HTTPBuilder
-import groovyx.net.http.HttpResponseException
+// vim: ts=4 sts=4 sw=4 et
 import groovy.json.JsonSlurper
-import static groovyx.net.http.Method.GET
-import static groovyx.net.http.ContentType.JSON
 import org.ho.yaml.Yaml
+// When we're at groovy 3.0
+//import groovy.yaml.YamlSlurper
 import java.io.FileNotFoundException
-import jenkins.model.Jenkins
+import java.io.IOException
 
 // Used for merging .jenkins.yaml in to default env
 Map.metaClass.addNested = { Map rhs ->
@@ -24,8 +14,7 @@ Map.metaClass.addNested = { Map rhs ->
 }
 
 // https://stackoverflow.com/questions/7087185/retry-after-exception-in-groovy
-def retry_get_file(int times = 5, Closure errorHandler = {e-> out.println(e.message)}
-          , Closure body) {
+def retry_get_file(int times = 5, Closure errorHandler = {e-> out.println(e.message)}, Closure body) {
     int retries = 0
     def exceptions = []
     while(retries++ < times) {
@@ -99,26 +88,28 @@ def _get_int(value, default_value) {
 def load_env(repo) {
     // Default environment
     def env = [
-            'name'                   : repo.name,
-            'full_name'              : repo.full_name.toLowerCase(),
-            'repo_full_name'         : repo.full_name, // Jenkins is not case insensitive with push notifications
-            'disabled'               : false,
-            'git'                    : [:],
-            'python_source_directory': 'src',
-            'slack'                  : ['room': 'devops-builds', 'disabled': false],
-            'triggers'               : [:],
-            'builders'               : [],
-            'build_in_docker'        : [
-                    'disabled': false,
-                    'dockerfile': null,
-                    'image': null,
-                    'start_command': "/run.sh"
-            ]
+        'name'                   : repo.name,
+        'full_name'              : repo.full_name.toLowerCase(),
+        'repo_full_name'         : repo.full_name, // Jenkins is not case insensitive with push notifications
+        'disabled'               : false,
+        'git'                    : [:],
+        'python_source_directory': 'src',
+        'slack'                  : ['room': 'devops-builds', 'disabled': false],
+        'triggers'               : [:],
+        'builders'               : [],
+        'build_in_docker'        : [
+            'disabled': false,
+            'dockerfile': null,
+            'image': null,
+            'start_command': "/run.sh"
+        ]
     ]
 
     // Load enviroment variables from repo yaml file
     try {
-        repo_env = Yaml.load(try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml")))
+        // Groovy 3.0
+        //repo_env = YamlSlurper.parse(try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml")))
+        repo_env = new Yaml().load(try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml")))
         env.addNested(repo_env)
     } catch (FileNotFoundException ex) {
         out.println("No .jenkins.yaml for ${env.full_name}... will use defaults")
@@ -238,7 +229,8 @@ def add_job(env) {
                     out.println("${env.full_name} using trigger github push")
                     githubPush()
                 }
-                if (env.triggers.cron != null) {
+                // Workaround org.ho.yaml.Yaml bug that resolvs null to the string null
+                if (env.triggers.cron != null && env.triggers.cron != "null") {
                     out.println("${env.full_name} using trigger cron: ${env.triggers.cron}")
                     cron(env.triggers.cron)
                 }
@@ -248,7 +240,7 @@ def add_job(env) {
                 }
             }
             publishers {
-                if (_slack_enabled(env)) {
+                if (_slack_enabled(env) && "${SLACK_TOKEN}" != "") {
                     out.println("${env.full_name} using Slack notification to: ${env.slack.room}")
                     slackNotifier {
                         teamDomain('SUNET')
@@ -320,15 +312,9 @@ def add_job(env) {
                 if (_get_bool(env.clean_workspace, false)) {
                     preBuildCleanup()
                 }
-                if (build_in_docker || env.environment_variables != null) {
+                if (env.environment_variables != null) {
                     environmentVariables {
-                        if (build_in_docker) {
-                            // For docker in docker but can create problems with building stuff
-                            envs(LD_LIBRARY_PATH: '/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/external_libs/lib64:/external_libs/usr/lib64')
-                        }
-                        if (env.environment_variables != null) {
-                            envs(env.environment_variables)
-                        }
+                        envs(env.environment_variables)
                     }
                 }
                 // Build in docker
@@ -339,8 +325,6 @@ def add_job(env) {
                         // Enable docker in docker
                         volume('/usr/bin/docker', '/usr/bin/docker')
                         volume('/var/run/docker.sock', '/var/run/docker.sock')
-                        volume('/lib/x86_64-linux-gnu', '/external_libs/lib64')
-                        volume('/usr/lib/x86_64-linux-gnu', '/external_libs/usr/lib64')
                         startCommand(env.build_in_docker.start_command)
                         if (env.build_in_docker.image != null) {
                             out.println("${env.full_name} building in docker image ${env.build_in_docker.image}")
@@ -450,80 +434,82 @@ def add_job(env) {
 }
 
 def orgs = ['SUNET','TheIdentitySelector']
-def url = "https://api.github.com/"
+def api = "https://api.github.com"
 
-orgs.each {
-    def next_path = "/orgs/${it}/repos"
-    def next_query = null
-    def api = new HTTPBuilder(url)
+for (org in orgs) {
+    //TODO: Should we set a per_page=100 (100 is max) to decrese the number of api calls,
+    // So we don't get ratelimited as easy?
+    def next_path = "/orgs/${org}/repos"
     try {
         while (next_path != null) {
-            api.request(GET, JSON) { req ->
-                uri.path = next_path
-                if (next_query != null) {
-                    uri.query = next_query
-                }
-                headers.'User-Agent' = 'Mozilla/5.0'
+            def url = new URL(api + next_path)
+            def conn = url.openConnection()
+            // This way you can add your own github auth token via https://github.com/settings/tokens
+            // So you don't run into the request api request limit as quickly...
+            //conn.addRequestProperty("Authorization", "token XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 
-                response.success = { resp, reader ->
-                    assert resp.status == 200
+            repos = new JsonSlurper().parse(conn.getInputStream())
 
-                    def repos = reader
-                    next_path = null
-                    if (resp.headers.'Link' != null) {
-                        resp.headers.'Link'.split(',').each {
-                            it = it.trim()
-                            def m = (it =~ /<https:\/\/api.github.com([^>]+)>; rel="next"/)
-                            if (m.matches()) {
-                                def a = m[0][1].split('\\?')
-                                next_path = a[0]
-                                next_query = null
-                                if (a.length == 2) {
-                                    next_query = [:]
-                                    a[1].split('&').each {
-                                        def av = it.split('=')
-                                        next_query[av[0]] = av[1]
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    repos.each {
-                        out.println("repo: ${it.name}")
-                        try {
-                            def name = it.name
-                            def full_name = it.full_name.toLowerCase()
-                            if (name != null && full_name != null && name != "null" && full_name != "null") {
-                                hudson.FilePath workspace = hudson.model.Executor.currentExecutor().getCurrentWorkspace()
-                                env = load_env(it)
-                                add_job(env)
-                                if (env.extra_jobs != null) {
-                                    env.extra_jobs.each {
-                                        cloned_env = env.clone()  // No looping over changing data
-                                        cloned_env << it
-                                        out.println("found extra job: ${cloned_env.name}")
-                                        add_job(cloned_env)
-                                    }
-                                }
-                            }
-                            out.println("---- EOJ ----")
-                        } catch (RuntimeException ex) {
-                            out.println("---- Failed to process ${it.name} ----")
-                            out.println(ex.toString());
-                            out.println(ex.getMessage());
-                            out.println("---- Trying next repo ----")
-                        }
+            // Terminate loop if we can't find a next link
+            next_path = null
+            Map<String, List<String>> headers = conn.getHeaderFields()
+            if ('Link' in headers) {
+                // The list isn't the Link's in the Link header,
+                // its that it can be multiple Link headers in a response.
+                def links = headers['Link'][0]
+                //links.split(",").each { link ->
+                for (link in links.split(",")) {
+                    link = link.trim()
+                    def m = (link =~ /<https:\/\/api.github.com([^>]+)>; rel="next"/)
+                    if (m.matches()) {
+                        next_path = m[0][1]
+                        break;
                     }
                 }
             }
+
+            repos.each {
+                out.println("repo: ${it.name}")
+                try {
+                    def name = it.name
+                    def full_name = it.full_name.toLowerCase()
+                    if (name != null && full_name != null && name != "null" && full_name != "null") {
+                        env = load_env(it)
+                        add_job(env)
+                        if (env.extra_jobs != null) {
+                            env.extra_jobs.each {
+                                cloned_env = env.clone()  // No looping over changing data
+                                cloned_env << it
+                                out.println("found extra job: ${cloned_env.name}")
+                                add_job(cloned_env)
+                            }
+                        }
+                    }
+                    out.println("---- EOJ ----")
+                } catch (RuntimeException ex) {
+                    out.println("---- Failed to process ${it.name} ----")
+                    out.println(ex.toString());
+                    out.println(ex.getMessage());
+                    out.println("---- Trying next repo ----")
+                }
+            }
         }
-    } catch (HttpResponseException ex) {
+    } catch (FileNotFoundException | IOException ex) {
         out.println("---- Bad response from: ----")
         out.println("Path: ${next_path}")
         out.println("Query: ${next_query}")
         out.println(ex.toString());
         out.println(ex.getMessage());
-        System.exit(1)
+    }
+}
+
+for (managed_script in ["docker_build_prep.sh", "docker_tag.sh"]) {
+    configFiles {
+        scriptConfig {
+            id(managed_script)
+            name(managed_script)
+            comment("Script managed from job-dsl, don't edit in jenkins.")
+            content(readFileFromWorkspace("managed_scripts/" + managed_script))
+        }
     }
 }
