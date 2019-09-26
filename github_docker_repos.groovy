@@ -188,14 +188,12 @@ def add_job(env, is_dev_mode) {
     if (env.builders.size() > 0 && !_is_disabled(env)) {
         out.println("generating job for ${env.full_name} using builders: ${env.builders}")
 
-        def build_in_docker = _build_in_docker(env)
-        def cloud = true
 
         job(env.name) {
             properties {
                 githubProjectUrl("https://github.com/${env.repo_full_name}")
                 // Build in docker
-                if (cloud && build_in_docker) {
+                if (_build_in_docker(env)) {
                     dockerJobTemplateProperty {
                         cloudname("")  // Empty means pick one.
                         template {
@@ -364,24 +362,6 @@ def add_job(env, is_dev_mode) {
                 if (env.environment_variables != null) {
                     environmentVariables {
                         envs(env.environment_variables)
-                    }
-                }
-                // Build in docker
-                if (!cloud && build_in_docker) {
-                    buildInDocker {
-                        forcePull(is_dev_mode ? false : _get_bool(env.build_in_docker.force_pull, true))
-                        verbose(_get_bool(env.build_in_docker.verbose, false))
-                        // Enable docker in docker
-                        volume('/usr/bin/docker', '/usr/bin/docker')
-                        volume('/var/run/docker.sock', '/var/run/docker.sock')
-                        startCommand(env.build_in_docker.start_command)
-                        if (env.build_in_docker.image != null) {
-                            out.println("${env.full_name} building in docker image ${env.build_in_docker.image}")
-                            image(env.build_in_docker.image)
-                        } else if (env.build_in_docker.dockerfile != null) {
-                            out.println("${env.full_name} building in docker image from Dockerfile ${env.build_in_docker.dockerfile}")
-                            dockerfile('.', env.build_in_docker.dockerfile)
-                        }
                     }
                 }
             }
