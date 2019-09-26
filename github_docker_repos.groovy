@@ -184,7 +184,7 @@ def load_env(repo) {
     return env
 }
 
-def add_job(env) {
+def add_job(env, is_dev_mode) {
     if (env.builders.size() > 0 && !_is_disabled(env)) {
         out.println("generating job for ${env.full_name} using builders: ${env.builders}")
         job(env.name) {
@@ -322,7 +322,7 @@ def add_job(env) {
                 // Build in docker
                 if (build_in_docker) {
                     buildInDocker {
-                        forcePull(_get_bool(env.build_in_docker.force_pull, true))
+                        forcePull(is_dev_mode ? false : _get_bool(env.build_in_docker.force_pull, true))
                         verbose(_get_bool(env.build_in_docker.verbose, false))
                         // Enable docker in docker
                         volume('/usr/bin/docker', '/usr/bin/docker')
@@ -403,7 +403,7 @@ def add_job(env) {
                         }
                         dockerRegistryURL("https://docker.sunet.se")
                         tag(tags.join(","))
-                        forcePull(_get_bool(env.docker_force_pull, true))
+                        forcePull(is_dev_mode ? false : _get_bool(env.docker_force_pull, true))
                         noCache(_get_bool(env.docker_no_cache, true))
                         forceTag(_get_bool(env.docker_force_tag, false))
                         createFingerprints(_get_bool(env.docker_create_fingerprints, true))
@@ -501,13 +501,13 @@ for (org in orgs) {
                     def full_name = it.full_name.toLowerCase()
                     if (name != null && full_name != null && name != "null" && full_name != "null") {
                         env = load_env(it)
-                        add_job(env)
+                        add_job(env, is_dev_mode)
                         if (env.extra_jobs != null) {
                             env.extra_jobs.each {
                                 cloned_env = env.clone()  // No looping over changing data
                                 cloned_env << it
                                 out.println("found extra job: ${cloned_env.name}")
-                                add_job(cloned_env)
+                                add_job(cloned_env, is_dev_mode)
                             }
                         }
                     }
