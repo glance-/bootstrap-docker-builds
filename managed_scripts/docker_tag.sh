@@ -27,7 +27,7 @@ docker push "${DOCKERNAME}:${FIXED_BRANCH}"
 #
 # Make a tag with the 'git describe' of the image, which will include the Jenkins build number
 #
-GIT_DESCRIBE=$(git describe)
+GIT_DESCRIBE=$(git describe --always)
 test -n "${GIT_DESCRIBE}"
 FIXED_DESCRIBE=$(echo "${GIT_DESCRIBE}" | sed -e 's/^jenkins/ci/')
 test -n "${FIXED_DESCRIBE}"
