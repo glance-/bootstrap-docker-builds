@@ -544,3 +544,37 @@ for (managed_script in ["docker_build_prep.sh"]) {
         }
     }
 }
+
+listView("cnaas") {
+    jobs {
+        regex(/.*cnaas.*/)
+    }
+}
+
+listView("comanage") {
+    jobs {
+        regex(/^comanage.*/)
+    }
+}
+
+listView("eduid") {
+    jobs {
+        name("pysmscom")
+        name("python-vccs_client")
+        name("VCCS")
+        regex(/.*eduid.*/)
+    }
+}
+
+listView("jenkins") {
+    jobs {
+        name("bootstrap-docker-builds")
+        regex(/.*jenkins.*/)
+    }
+}
+
+listView("se-leg") {
+    jobs {
+        regex(/.*se-leg.*/)
+    }
+}
