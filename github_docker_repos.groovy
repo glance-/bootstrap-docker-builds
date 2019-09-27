@@ -484,6 +484,8 @@ if (binding.hasVariable("DEV_MODE") && "${DEV_MODE}" != "" && DEV_MODE.toBoolean
     is_dev_mode = true
 }
 
+def failure_in_repos = false
+
 for (org in orgs) {
     //TODO: Should we set a per_page=100 (100 is max) to decrese the number of api calls,
     // So we don't get ratelimited as easy?
@@ -548,6 +550,7 @@ for (org in orgs) {
                     out.println(ex.toString());
                     out.println(ex.getMessage());
                     out.println("---- Trying next repo ----")
+                    failure_in_repos = true
                 }
             }
         }
@@ -649,3 +652,6 @@ listView("se-leg") {
         buildButton()
     }
 }
+
+if (failure_in_repos)
+    SEED_JOB.getLastBuild().setResult(hudson.model.Result.UNSTABLE)
