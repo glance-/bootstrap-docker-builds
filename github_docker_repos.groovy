@@ -431,19 +431,33 @@ def add_job(env, is_dev_mode) {
                         // so implement the same functionallity here.
                         tags.add("branch-\${GIT_BRANCH#origin/}")
                     }
-                    dockerBuildAndPublish {
-                        repositoryName(env.docker_name)
-                        if (env.docker_context_dir != null) {
-                            buildContext(env.docker_context_dir)
+                    if (!_get_bool(env.docker_skip_tag_as_latest, false))
+                        tags.add("latest")
+
+                    def full_names = []
+                    for (tag in tags)
+                        full_names.add("docker.sunet.se/${env.docker_name.replace("-/", "/")}:${tag}") // docker doesn't like glance-/repo, so mangle it to glance/repo
+
+                    dockerBuilderPublisher {
+                        dockerFileDirectory(env.docker_context_dir != null ? env.docker_context_dir : "")
+                        tagsString(full_names.join("\n"))
+                        pushOnSuccess(!is_dev_mode)
+                        cloud("") // Use the current jobs cloud.
+                        // Override where to pull from, and what credentials to use.
+                        fromRegistry {
+                            url('')
+                            credentialsId('')
                         }
-                        dockerRegistryURL("https://docker.sunet.se")
-                        tag(tags.join(","))
+                        pushCredentialsId('')
+                        cleanImages(true)
+                        cleanupWithJenkinsJobDelete(true)
+                    }
+                    /* TODO: things not implemented in docker-plugin
                         forcePull(is_dev_mode ? false : _get_bool(env.docker_force_pull, true))
                         noCache(_get_bool(env.docker_no_cache, true))
                         forceTag(_get_bool(env.docker_force_tag, false))
                         createFingerprints(_get_bool(env.docker_create_fingerprints, true))
-                        skipTagAsLatest(_get_bool(env.docker_skip_tag_as_latest, false))
-                    }
+                    */
                     out.println('Builder "docker" configured.')
                 }
                 // Post-build script
