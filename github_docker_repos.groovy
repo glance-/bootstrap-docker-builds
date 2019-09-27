@@ -549,11 +549,29 @@ listView("cnaas") {
     jobs {
         regex(/.*cnaas.*/)
     }
+    columns {
+        status()
+        weather()
+        name()
+        lastSuccess()
+        lastFailure()
+        lastDuration()
+        buildButton()
+    }
 }
 
 listView("comanage") {
     jobs {
         regex(/^comanage.*/)
+    }
+    columns {
+        status()
+        weather()
+        name()
+        lastSuccess()
+        lastFailure()
+        lastDuration()
+        buildButton()
     }
 }
 
@@ -564,6 +582,15 @@ listView("eduid") {
         name("VCCS")
         regex(/.*eduid.*/)
     }
+    columns {
+        status()
+        weather()
+        name()
+        lastSuccess()
+        lastFailure()
+        lastDuration()
+        buildButton()
+    }
 }
 
 listView("jenkins") {
@@ -571,10 +598,28 @@ listView("jenkins") {
         name("bootstrap-docker-builds")
         regex(/.*jenkins.*/)
     }
+    columns {
+        status()
+        weather()
+        name()
+        lastSuccess()
+        lastFailure()
+        lastDuration()
+        buildButton()
+    }
 }
 
 listView("se-leg") {
     jobs {
         regex(/.*se-leg.*/)
+    }
+    columns {
+        status()
+        weather()
+        name()
+        lastSuccess()
+        lastFailure()
+        lastDuration()
+        buildButton()
     }
 }
