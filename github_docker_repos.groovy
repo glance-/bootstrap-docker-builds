@@ -1,6 +1,6 @@
 // vim: ts=4 sts=4 sw=4 et
 import groovy.json.JsonSlurper
-import org.ho.yaml.Yaml
+import org.yaml.snakeyaml.Yaml
 // When we're at groovy 3.0
 //import groovy.yaml.YamlSlurper
 import java.io.FileNotFoundException
@@ -107,9 +107,12 @@ def load_env(repo) {
 
     // Load enviroment variables from repo yaml file
     try {
-        // Groovy 3.0
-        //repo_env = YamlSlurper.parse(try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml")))
-        repo_env = new Yaml().load(try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml")))
+        def yaml_text = try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml"))
+        // Mangle broken yaml into something a propper yaml parser stands
+        def fixed_yaml_text = yaml_text.replaceAll('cron: (@\\w+)', 'cron: "$1"')
+        if (yaml_text != fixed_yaml_text)
+            out.println("FIXME: This repo contains non compliant yaml")
+        def repo_env = new Yaml().load(fixed_yaml_text)
         env.addNested(repo_env)
     } catch (FileNotFoundException ex) {
         out.println("No .jenkins.yaml for ${env.full_name}... will use defaults")
@@ -181,7 +184,7 @@ def load_env(repo) {
     return env
 }
 
-def add_job(env) {
+def add_job(env, is_dev_mode) {
     if (env.builders.size() > 0 && !_is_disabled(env)) {
         out.println("generating job for ${env.full_name} using builders: ${env.builders}")
         job(env.name) {
@@ -229,8 +232,7 @@ def add_job(env) {
                     out.println("${env.full_name} using trigger github push")
                     githubPush()
                 }
-                // Workaround org.ho.yaml.Yaml bug that resolvs null to the string null
-                if (env.triggers.cron != null && env.triggers.cron != "null") {
+                if (env.triggers.cron != null) {
                     out.println("${env.full_name} using trigger cron: ${env.triggers.cron}")
                     cron(env.triggers.cron)
                 }
@@ -320,7 +322,7 @@ def add_job(env) {
                 // Build in docker
                 if (build_in_docker) {
                     buildInDocker {
-                        forcePull(_get_bool(env.build_in_docker.force_pull, true))
+                        forcePull(is_dev_mode ? false : _get_bool(env.build_in_docker.force_pull, true))
                         verbose(_get_bool(env.build_in_docker.verbose, false))
                         // Enable docker in docker
                         volume('/usr/bin/docker', '/usr/bin/docker')
@@ -394,6 +396,15 @@ def add_job(env) {
                     if (env.docker_tags != null) {
                         tags.addAll(env.docker_tags)
                     }
+
+                    if (_managed_script_enabled(env, 'docker_tag.sh')) {
+                        out.println("Managed script docker_tag.sh enabled.")
+                        out.println("Not using docker_tag.sh, having it done by dockerBuildAndPublish instead")
+                        // docker_tag is buggy and trying to deterministically find a docker image
+                        // based on a git sha. This detonates if it sees other images built on the same sha,
+                        // so implement the same functionallity here.
+                        tags.add("branch-\${GIT_BRANCH#origin/}")
+                    }
                     dockerBuildAndPublish {
                         repositoryName(env.docker_name)
                         if (env.docker_context_dir != null) {
@@ -401,15 +412,11 @@ def add_job(env) {
                         }
                         dockerRegistryURL("https://docker.sunet.se")
                         tag(tags.join(","))
-                        forcePull(_get_bool(env.docker_force_pull, true))
+                        forcePull(is_dev_mode ? false : _get_bool(env.docker_force_pull, true))
                         noCache(_get_bool(env.docker_no_cache, true))
                         forceTag(_get_bool(env.docker_force_tag, false))
                         createFingerprints(_get_bool(env.docker_create_fingerprints, true))
                         skipTagAsLatest(_get_bool(env.docker_skip_tag_as_latest, false))
-                    }
-                    if (_managed_script_enabled(env, 'docker_tag.sh')) {
-                        out.println("Managed script docker_tag.sh enabled.")
-                        managedScript('docker_tag.sh') {}
                     }
                     out.println('Builder "docker" configured.')
                 }
@@ -436,10 +443,32 @@ def add_job(env) {
 def orgs = ['SUNET','TheIdentitySelector']
 def api = "https://api.github.com"
 
+if (binding.hasVariable("ORGS") && "${ORGS}" != "") {
+    orgs = new JsonSlurper().parseText("${ORGS}")
+    out.println("orgs overridden by env: ${ORGS}")
+}
+def ONLY_REPOS = null
+if (binding.hasVariable("REPOS") && "${REPOS}" != "") {
+    ONLY_REPOS = new JsonSlurper().parseText("${REPOS}")
+    out.println("repos overridden by env: ${REPOS}")
+}
+def is_dev_mode = false
+if (binding.hasVariable("DEV_MODE") && "${DEV_MODE}" != "" && DEV_MODE.toBoolean()) {
+    out.println("DEV_MODE detected, will act accordingly")
+    is_dev_mode = true
+}
+
 for (org in orgs) {
     //TODO: Should we set a per_page=100 (100 is max) to decrese the number of api calls,
     // So we don't get ratelimited as easy?
     def next_path = "/orgs/${org}/repos"
+    def c = new URL(api + "/orgs/${org}").openConnection()
+    // Is this a org?
+    // If not, try the users endpoint
+    if (c.getResponseCode() == 404) {
+        out.println("${org} is not a org, guessing its a user")
+        next_path = "/users/${org}/repos"
+    }
     try {
         while (next_path != null) {
             def url = new URL(api + next_path)
@@ -469,19 +498,21 @@ for (org in orgs) {
             }
 
             repos.each {
+                if (ONLY_REPOS && !ONLY_REPOS.contains(it.name))
+                    return // return is like continue in a closure
                 out.println("repo: ${it.name}")
                 try {
                     def name = it.name
                     def full_name = it.full_name.toLowerCase()
                     if (name != null && full_name != null && name != "null" && full_name != "null") {
                         env = load_env(it)
-                        add_job(env)
+                        add_job(env, is_dev_mode)
                         if (env.extra_jobs != null) {
                             env.extra_jobs.each {
                                 cloned_env = env.clone()  // No looping over changing data
                                 cloned_env << it
                                 out.println("found extra job: ${cloned_env.name}")
-                                add_job(cloned_env)
+                                add_job(cloned_env, is_dev_mode)
                             }
                         }
                     }
@@ -497,13 +528,13 @@ for (org in orgs) {
     } catch (FileNotFoundException | IOException ex) {
         out.println("---- Bad response from: ----")
         out.println("Path: ${next_path}")
-        out.println("Query: ${next_query}")
         out.println(ex.toString());
         out.println(ex.getMessage());
+        throw ex
     }
 }
 
-for (managed_script in ["docker_build_prep.sh", "docker_tag.sh"]) {
+for (managed_script in ["docker_build_prep.sh"]) {
     configFiles {
         scriptConfig {
             id(managed_script)
@@ -511,5 +542,39 @@ for (managed_script in ["docker_build_prep.sh", "docker_tag.sh"]) {
             comment("Script managed from job-dsl, don't edit in jenkins.")
             content(readFileFromWorkspace("managed_scripts/" + managed_script))
         }
+    }
+}
+
+listView("cnaas") {
+    jobs {
+        regex(/.*cnaas.*/)
+    }
+}
+
+listView("comanage") {
+    jobs {
+        regex(/^comanage.*/)
+    }
+}
+
+listView("eduid") {
+    jobs {
+        name("pysmscom")
+        name("python-vccs_client")
+        name("VCCS")
+        regex(/.*eduid.*/)
+    }
+}
+
+listView("jenkins") {
+    jobs {
+        name("bootstrap-docker-builds")
+        regex(/.*jenkins.*/)
+    }
+}
+
+listView("se-leg") {
+    jobs {
+        regex(/.*se-leg.*/)
     }
 }
