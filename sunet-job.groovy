@@ -214,7 +214,7 @@ def log_rotator = [
 ]
 // Rotate archived artifacts
 if (env.archive_artifacts != null) {
-    log_rotator["artifactNumToKeepStr"] = _get_int(env.archive_artifacts.num_to_keep, 1)
+    log_rotator["artifactNumToKeepStr"] = env.archive_artifacts.num_to_keep?.toString() ?: "1"
 }
 if (real_env.DEV_MODE?.toBoolean())
     echo "DEV_MODE detected"
