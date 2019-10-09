@@ -281,7 +281,7 @@ if (trigger_list)
     property_list += [pipelineTriggers(trigger_list)]
 
 if (env.environment_variables != null) {
-    for (item in env.environment_variables) {
+    for (def item in env.environment_variables) {
         // Set these variables in our current enviorment
         env[item.key] = item.value
     }
@@ -342,7 +342,7 @@ for (def extra_job in ${job_names.inspect()}) {
                 args["branches"].add(["name": "*/${env.git.branch}"])
             } else if (env.git.branches != null) {
                 echo("${env.full_name} building branches ${env.git.branches}")
-                for (branch in env.git.branches) {
+                for (def branch in env.git.branches) {
                     args["branches"].add(["name": "*/${branch}"])
                 }
             } else {
@@ -438,7 +438,7 @@ for (def extra_job in ${job_names.inspect()}) {
                     tags.add("latest")
 
                 def full_names = []
-                for (tag in tags)
+                for (def tag in tags)
                     full_names.add("docker.sunet.se/${env.docker_name.replace("-/", "/")}:${tag}") // docker doesn't like glance-/repo, so mangle it to glance/repo
 
                 def docker_build_and_publish = [
@@ -469,14 +469,14 @@ for (def extra_job in ${job_names.inspect()}) {
         if (env.downstream != null && env.downstream.size() > 0) {
             stage("Triggering downstreams") {
                 echo("${env.full_name} using downstream ${env.downstream.join(', ')}")
-                for (downstream in env.downstream) {
+                for (def downstream in env.downstream) {
                     build(job: downstream)
                 }
             }
         }
         if (env.publish_over_ssh != null) {
             stage("Publishing over ssh") {
-                for (target in env.publish_over_ssh) {
+                for (def target in env.publish_over_ssh) {
                     if (target == 'pypi.sunet.se') {
                         if (env.builders.contains("python") || env.builders.contains("script")) {
                             echo("Publishing over ssh to ${it} enabled.")
