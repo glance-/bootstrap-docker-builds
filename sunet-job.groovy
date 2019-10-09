@@ -395,9 +395,9 @@ for (def extra_job in ${job_names.inspect()}) {
                 // Mutually exclusive builder steps
                 if (env.builders.contains("script")) {
                     echo('Builder "script" configured.')
-                    for (script in env.script) {
-                        sh(script)
-                    }
+                    // This is expected to be run in the same shell,
+                    // So enviorment-modifications carry over between lines in yaml.
+                    sh(env.script.join('\n'))
                 } else if (env.builders.contains("make")) {
                     echo('Builder "make" configured.')
                     sh("make clean && make && make test")
