@@ -480,7 +480,7 @@ for (def extra_job in ${job_names.inspect()}) {
                 for (def target in env.publish_over_ssh) {
                     if (target == 'pypi.sunet.se') {
                         if (env.builders.contains("python") || env.builders.contains("script")) {
-                            echo("Publishing over ssh to ${it} enabled.")
+                            echo("Publishing over ssh to ${target} enabled.")
                             sshPublisher(publishers: [sshPublisherDesc(
                                 configName: 'pypi.sunet.se',
                                 transfers: [sshTransfer(
@@ -490,7 +490,7 @@ for (def extra_job in ${job_names.inspect()}) {
                             )])
                         }
                     } else {
-                        echo("Don't know how to publish over ssh to ${it} for builders ${env.builders}.")
+                        echo("Don't know how to publish over ssh to ${target} for builders ${job_env.builders}.")
                     }
                 }
             }
