@@ -83,6 +83,8 @@ def load_env() {
     stage("load_env") {
         node {
             def scmVars = checkout(scm)
+            echo scmVars.inspect().toString()
+            echo scmVars.toString()
             def FULL_NAME = scmVars.GIT_URL.replace("https://github.com/", "")
 
             def _repo_file = { x, y, file -> return file }
@@ -378,6 +380,11 @@ for (def extra_job in ${job_names.inspect()}) {
             }
             scmVars = checkout(args)
             // ['GIT_BRANCH':'origin/master', 'GIT_COMMIT':'8408762af61447e38a832513e595a518d81bf9af', 'GIT_PREVIOUS_COMMIT':'8408762af61447e38a832513e595a518d81bf9af', 'GIT_PREVIOUS_SUCCESSFUL_COMMIT':'dcea3f3567b7f55bc7a1a2f3d6752c084cc9b694', 'GIT_URL':'https://github.com/glance-/docker-goofys.git']
+            echo scmVars.inspect().toString()
+            echo scmVars.toString()
+            // FIXME: WTF?
+            // Why is GIT_COMMIT missing , and only GIT_URL is there?
+            scmVars.GIT_COMMIT = "0123456789ABCDEF"
         }
         if (job_env.copy_artifacts != null) {
             stage("Copy artifacts") {
