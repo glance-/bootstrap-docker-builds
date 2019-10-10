@@ -181,18 +181,24 @@ def load_env() {
 // Save the real env, representing the enviorment variables from jenkins
 def real_env = env
 
+// load and parse .jenkins.yaml
 def env = load_env()
+
+// Run the extra-job bits if You're one of those
 if (env.extra_jobs != null) {
-    echo("Would have created extra jobs")
-    /*
-    env.extra_jobs.each {
-        cloned_env = env.clone()  // No looping over changing data
-        cloned_env << repo
-        echo("found extra job: ${cloned_env.name}")
-        add_job(cloned_env)
+    for (def job in env.extra_jobs) {
+        if (job.name == JOB_BASE_NAME) {
+            echo "I'm a extra-job"
+            // Merge everything in the extra job over the current job
+            env << job
+            // And remove the extra_jobs bit, becase we're the extra job here,
+            // And we shouldn't generate ourselfs.
+            env.remove("extra_jobs")
+            break;
+        }
     }
-    */
 }
+
 if (env.builders.size() == 0 || _is_disabled(env)) {
     echo("No builder for ${env.full_name}...")
     currentBuild.result = "NOT_BUILT"
@@ -299,6 +305,29 @@ properties([
 
 def scmVars
 node {
+    // Generate our extra_jobs by running some job-dsl
+    if (env.extra_jobs != null) {
+        stage("extra_jobs") {
+            def job_names = []
+            for (job in env.extra_jobs) {
+                job_names += job.name
+            }
+            jobDsl(
+                failOnMissingPlugin: true,
+                failOnSeedCollision: true,
+                lookupStrategy: 'SEED_JOB',
+                removedConfigFilesAction: 'DELETE',
+                removedJobAction: 'DELETE',
+                removedViewAction: 'DELETE',
+                unstableOnDeprecation: true,
+                scriptText: """
+for (def extra_job in ${job_names.inspect()}) {
+  pipelineJob("\${extra_job}") {
+    using("${JOB_NAME}")
+  }
+}""")
+        }
+    }
     try {
         stage("checkout") {
             def args = [
