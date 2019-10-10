@@ -1,4 +1,5 @@
 // vim: ts=4 sts=4 sw=4 et
+import java.io.IOException
 
 // Used for merging .jenkins.yaml in to default env
 def addNested(lhs, rhs) {
@@ -79,6 +80,14 @@ def _get_int(value, default_value) {
 }
 
 def load_env() {
+    stage("load_env") {
+        node {
+            def scmVars = checkout(scm)
+            def FULL_NAME = scmVars.GIT_URL.replace("https://github.com/", "")
+
+            def _repo_file = { x, y, file -> return file }
+            def try_get_file = { file -> return readFile(file) }
+
     // Default environment
     def env = [
         'name'                   : JOB_BASE_NAME,
@@ -108,7 +117,7 @@ def load_env() {
             echo("FIXME: This repo contains non compliant yaml")
         def repo_env = readYaml(text: fixed_yaml_text)
         env = addNested(env, repo_env)
-    } catch (FileNotFoundException ex) {
+    } catch (IOException|FileNotFoundException ex) {
         echo("No .jenkins.yaml for ${env.full_name}... will use defaults")
     }
 
@@ -134,14 +143,14 @@ def load_env() {
                 echo("No docker_name set. Using ${env.full_name}.")
                 env.docker_name = env.full_name
             }
-        } catch (FileNotFoundException ex) { }
+        } catch (IOException|FileNotFoundException ex) { }
 
         try {
             if (try_get_file(_repo_file(env.repo_full_name, "master", "setup.py")).contains("python")) {
                 echo("Found setup.py for ${env.full_name}. Adding \"python\" to builders.")
                 env.builders += "python"
             }
-        } catch (FileNotFoundException ex) { }
+        } catch (IOException|FileNotFoundException ex) { }
 
         if (env.script != null) {
             echo("script set for ${env.full_name}. Adding \"script\" to builders.")
@@ -153,7 +162,7 @@ def load_env() {
                 echo("Found CMakeLists.txt for ${env.full_name}. Adding \"cmake\" to builders.")
                 env.builders += "cmake"
             }
-        } catch (FileNotFoundException ex) { }
+        } catch (IOException|FileNotFoundException ex) { }
     }
 
     // detecting wrappers
@@ -162,7 +171,7 @@ def load_env() {
             echo("Found Dockerfile.jenkins for ${env.full_name}. Will be used for build.")
             env.build_in_docker.dockerfile = "Dockerfile.jenkins"
         }
-    } catch (FileNotFoundException ex) { }
+    } catch (IOException|FileNotFoundException ex) { }
 
     if (env.build_in_docker.dockerfile == null && env.build_in_docker.image == null) {
         echo("No explicit build in docker settings found for ${env.full_name}. Will use docker.sunet.se/sunet/docker-jenkins-job.")
@@ -176,6 +185,8 @@ def load_env() {
     }
 
     return env
+        }
+    }
 }
 
 // load and parse .jenkins.yaml
@@ -290,6 +301,7 @@ if (job_env.job_environment_variables != null) {
     }
 }
 // We always need to keep FULL_NAME, and optionally DEV_MODE
+/*
 property_list += [
     $class: 'EnvInjectJobProperty',
     info: [
@@ -299,6 +311,7 @@ property_list += [
     keepJenkinsSystemVariables: true,
     on: true
 ]
+*/
 
 properties([
     buildDiscarder(log_rotator),
