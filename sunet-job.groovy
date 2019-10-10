@@ -213,6 +213,10 @@ def log_rotator = [
 if (job_env.archive_artifacts != null) {
     log_rotator["artifactNumToKeepStr"] = job_env.archive_artifacts.num_to_keep?.toString() ?: "1"
 }
+
+if (!('DEV_MODE' in env))
+    env.DEV_MODE = 'true'
+
 if (env.DEV_MODE?.toBoolean())
     echo "DEV_MODE detected"
 

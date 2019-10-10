@@ -67,18 +67,41 @@ for (org in orgs) {
                     continue
                 out.println("repo: ${repo.name}")
 
-                pipelineJob(repo.name) {
+                multibranchPipelineJob(repo.name) {
+                    /*
                     properties {
                         githubProjectUrl("https://github.com/${repo.full_name}")
-                    }
+                    }*/
+                    /*
                     environmentVariables {
                         env("FULL_NAME", repo.full_name)
                         env("DEV_MODE", is_dev_mode.toString())
                     }
+                    */
+                    /*
                     definition {
                         cps {
                             script(readFileFromWorkspace('sunet-job.groovy'))
                             sandbox()
+                        }
+                    }
+                    */
+                    triggers {
+                        // This is the trigger to scan for new branches to build
+                        periodicFolderTrigger {
+                            interval("86400000") // Once a day
+                        }
+                    }
+                    branchSources {
+                        git {
+                            id(repo.full_name)
+                            remote("https://github.com/${repo.full_name}")
+                        }
+                    }
+                    factory {
+                        pipelineBranchDefaultsProjectFactory {
+                            scriptId("sunet-job.groovy")
+                            useSandbox(true)
                         }
                     }
                 }
@@ -92,6 +115,16 @@ for (org in orgs) {
         throw ex
     }
 }
+
+configFiles {
+    groovyScript {
+        id("sunet-job.groovy")
+        name("sunet-job.groovy")
+        comment("Script managed from job-dsl, don't edit in jenkins.")
+        content(readFileFromWorkspace("sunet-job.groovy"))
+    }
+}
+
 
 for (managed_script in ["docker_build_prep.sh"]) {
     configFiles {
