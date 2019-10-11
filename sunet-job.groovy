@@ -220,12 +220,12 @@ if (real_env.DEV_MODE?.toBoolean())
     echo "DEV_MODE detected"
 
 def property_list = []
+def docker_image = null
 if (_build_in_docker(env)) {
     echo("${env.full_name} building in docker image ${env.build_in_docker.image}")
-    def image
     if (env.build_in_docker.image != null) {
         echo("${env.full_name} building in docker image ${env.build_in_docker.image}")
-        image = env.build_in_docker.image
+        docker_image = env.build_in_docker.image
     } else if (env.build_in_docker.dockerfile != null) {
         echo("${env.full_name} building in docker image from Dockerfile ${env.build_in_docker.dockerfile}")
         // FIXME!
@@ -233,8 +233,9 @@ if (_build_in_docker(env)) {
         // This can be done in pipeline, but in docker-cloud?
         //dockerfile('.', env.build_in_docker.dockerfile)
         echo("Doesn't support Dockerfile yet, so use the regular image for now")
-        image = "docker.sunet.se/sunet/docker-jenkins-job"
+        docker_image = "docker.sunet.se/sunet/docker-jenkins-job"
     }
+    /* Buu, doesn't work. Use dockerNode() instead
     property_list += [
         $class: "DockerJobTemplateProperty",
         template: [
@@ -255,10 +256,10 @@ if (_build_in_docker(env)) {
                     '/var/run/docker.sock:/var/run/docker.sock',
                 dockerCommand: env.build_in_docker.start_command,
                 tty: true,
-                image: image,
+                image: docker_image,
             ]
         ]
-    ]
+    ]*/
 }
 
 // github_push is enabled by default
@@ -303,8 +304,8 @@ properties([
 ] + property_list)
 
 
-def scmVars
-node {
+// This is broken out to a function, so it can be called either via a node() or a dockerNode()
+def runJob(env) {
     // Generate our extra_jobs by running some job-dsl
     if (env.extra_jobs != null) {
         stage("extra_jobs") {
@@ -517,5 +518,15 @@ for (def extra_job in ${job_names.inspect()}) {
             echo("${env.full_name} using Jabber notification to: ${env.jabber}")
             echo "No jabber plugin loaded"
         }
+    }
+}
+
+if (docker_image) {
+    dockerNode(image: docker_image) {
+        runJob(env)
+    }
+} else {
+    node() {
+        runJob(env)
     }
 }
