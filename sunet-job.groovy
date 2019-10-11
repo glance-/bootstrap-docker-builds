@@ -178,34 +178,31 @@ def load_env() {
     return env
 }
 
-// Save the real env, representing the enviorment variables from jenkins
-def real_env = env
-
 // load and parse .jenkins.yaml
-def env = load_env()
+def job_env = load_env()
 
 // Run the extra-job bits if You're one of those
-if (env.extra_jobs != null) {
-    for (def job in env.extra_jobs) {
+if (job_env.extra_jobs != null) {
+    for (def job in job_env.extra_jobs) {
         if (job.name == JOB_BASE_NAME) {
             echo "I'm a extra-job"
             // Merge everything in the extra job over the current job
-            env << job
+            job_env << job
             // And remove the extra_jobs bit, becase we're the extra job here,
             // And we shouldn't generate ourselfs.
-            env.remove("extra_jobs")
+            job_env.remove("extra_jobs")
             break;
         }
     }
 }
 
-if (env.builders.size() == 0 || _is_disabled(env)) {
-    echo("No builder for ${env.full_name}...")
+if (job_env.builders.size() == 0 || _is_disabled(job_env)) {
+    echo("No builder for ${job_env.full_name}...")
     currentBuild.result = "NOT_BUILT"
     return
 }
 
-echo("running job for ${env.full_name} using builders: ${env.builders}")
+echo("running job for ${job_env.full_name} using builders: ${job_env.builders}")
 
 // Rotate builds
 def log_rotator = [
@@ -213,25 +210,24 @@ def log_rotator = [
     "numToKeepStr": '10',
 ]
 // Rotate archived artifacts
-if (env.archive_artifacts != null) {
-    log_rotator["artifactNumToKeepStr"] = env.archive_artifacts.num_to_keep?.toString() ?: "1"
+if (job_env.archive_artifacts != null) {
+    log_rotator["artifactNumToKeepStr"] = job_env.archive_artifacts.num_to_keep?.toString() ?: "1"
 }
-if (real_env.DEV_MODE?.toBoolean())
+if (env.DEV_MODE?.toBoolean())
     echo "DEV_MODE detected"
 
 def property_list = []
 def docker_image = null
-if (_build_in_docker(env)) {
-    echo("${env.full_name} building in docker image ${env.build_in_docker.image}")
-    if (env.build_in_docker.image != null) {
-        echo("${env.full_name} building in docker image ${env.build_in_docker.image}")
-        docker_image = env.build_in_docker.image
-    } else if (env.build_in_docker.dockerfile != null) {
-        echo("${env.full_name} building in docker image from Dockerfile ${env.build_in_docker.dockerfile}")
+if (_build_in_docker(job_env)) {
+    if (job_env.build_in_docker.image != null) {
+        echo("${job_env.full_name} building in docker image ${job_env.build_in_docker.image}")
+        docker_image = job_env.build_in_docker.image
+    } else if (job_env.build_in_docker.dockerfile != null) {
+        echo("${job_env.full_name} building in docker image from Dockerfile ${job_env.build_in_docker.dockerfile}")
         // FIXME!
         // pkcs11-proxy is the only one using this.
         // This can be done in pipeline, but in docker-cloud?
-        //dockerfile('.', env.build_in_docker.dockerfile)
+        //dockerfile('.', job_env.build_in_docker.dockerfile)
         echo("Doesn't support Dockerfile yet, so use the regular image for now")
         docker_image = "docker.sunet.se/sunet/docker-jenkins-job"
     }
@@ -239,9 +235,9 @@ if (_build_in_docker(env)) {
     property_list += [
         $class: "DockerJobTemplateProperty",
         template: [
-            pullStrategy: real_env.DEV_MODE?.toBoolean() ? "PULL_NEVER" : (env.build_in_docker.force_pull ? "PULL_ALWAYS" : "PULL_LATEST"),
+            pullStrategy: env.DEV_MODE?.toBoolean() ? "PULL_NEVER" : (job_env.build_in_docker.force_pull ? "PULL_ALWAYS" : "PULL_LATEST"),
             // Name the container after what we build in it
-            name: "docker-${env.full_name}",
+            name: "docker-${job_env.full_name}",
             connector: [
                 attach: []
             ],
@@ -254,7 +250,7 @@ if (_build_in_docker(env)) {
                 volumesString: \
                     '/usr/bin/docker:/usr/bin/docker:ro\n' +
                     '/var/run/docker.sock:/var/run/docker.sock',
-                dockerCommand: env.build_in_docker.start_command,
+                dockerCommand: job_env.build_in_docker.start_command,
                 tty: true,
                 image: docker_image,
             ]
@@ -264,34 +260,34 @@ if (_build_in_docker(env)) {
 
 // github_push is enabled by default
 def trigger_list = []
-if (_get_bool(env.triggers.github_push, true)) {
-    echo("${env.full_name} using trigger github push")
+if (_get_bool(job_env.triggers.github_push, true)) {
+    echo("${job_env.full_name} using trigger github push")
     trigger_list += githubPush()
 }
-if (env.triggers.cron != null) {
-    echo("${env.full_name} using trigger cron: ${env.triggers.cron}")
-    trigger_list += cron(env.triggers.cron)
+if (job_env.triggers.cron != null) {
+    echo("${job_env.full_name} using trigger cron: ${job_env.triggers.cron}")
+    trigger_list += cron(job_env.triggers.cron)
 }
-if (env.upstream != null && env.upstream.size() > 0) {
-    echo("${env.full_name} using trigger upstream: ${env.upstream.join(', ')}")
-    trigger_list += upstream(env.upstream.join(', '))
+if (job_env.upstream != null && job_env.upstream.size() > 0) {
+    echo("${job_env.full_name} using trigger upstream: ${job_env.upstream.join(', ')}")
+    trigger_list += upstream(job_env.upstream.join(', '))
 }
 
 // If we have some triggers, add them to the property-list
 if (trigger_list)
     property_list += [pipelineTriggers(trigger_list)]
 
-if (env.environment_variables != null) {
-    for (def item in env.environment_variables) {
-        // Set these variables in our current enviorment
-        env[item.key] = item.value
+if (job_env.job_environment_variables != null) {
+    for (def item in job_env.job_environment_variables) {
+        // Set these variables in our current job_enviorment
+        job_env[item.key] = item.value
     }
 }
 // We always need to keep FULL_NAME, and optionally DEV_MODE
 property_list += [
     $class: 'EnvInjectJobProperty',
     info: [
-        propertiesContent: "FULL_NAME=${FULL_NAME}\n" + (real_env.DEV_MODE != null ? "DEV_MODE=${DEV_MODE}\n" : "")
+        propertiesContent: "FULL_NAME=${FULL_NAME}\n" + (env.DEV_MODE != null ? "DEV_MODE=${DEV_MODE}\n" : "")
     ],
     keepBuildVariables: true,
     keepJenkinsSystemVariables: true,
@@ -300,17 +296,17 @@ property_list += [
 
 properties([
     buildDiscarder(log_rotator),
-    [$class: 'GithubProjectProperty', projectUrlStr: "${env.full_name}"],
+    [$class: 'GithubProjectProperty', projectUrlStr: "${job_env.full_name}"],
 ] + property_list)
 
 
 // This is broken out to a function, so it can be called either via a node() or a dockerNode()
-def runJob(env) {
+def runJob(job_env) {
     // Generate our extra_jobs by running some job-dsl
-    if (env.extra_jobs != null) {
+    if (job_env.extra_jobs != null) {
         stage("extra_jobs") {
             def job_names = []
-            for (job in env.extra_jobs) {
+            for (job in job_env.extra_jobs) {
                 job_names += job.name
             }
             jobDsl(
@@ -329,105 +325,106 @@ for (def extra_job in ${job_names.inspect()}) {
 }""")
         }
     }
+    def scmVars
     try {
         stage("checkout") {
             def args = [
                 $class: 'GitSCM',
-                userRemoteConfigs: [[url: "https://github.com/${env.repo_full_name}.git"]],
+                userRemoteConfigs: [[url: "https://github.com/${job_env.repo_full_name}.git"]],
                 branches: [],
                 extensions: [],
             ]
             // Branch
-            if (env.git.branch != null) {
-                echo("${env.full_name} building branch ${env.git.branch}")
-                args["branches"].add(["name": "*/${env.git.branch}"])
-            } else if (env.git.branches != null) {
-                echo("${env.full_name} building branches ${env.git.branches}")
-                for (def branch in env.git.branches) {
+            if (job_env.git.branch != null) {
+                echo("${job_env.full_name} building branch ${job_env.git.branch}")
+                args["branches"].add(["name": "*/${job_env.git.branch}"])
+            } else if (job_env.git.branches != null) {
+                echo("${job_env.full_name} building branches ${job_env.git.branches}")
+                for (def branch in job_env.git.branches) {
                     args["branches"].add(["name": "*/${branch}"])
                 }
             } else {
-                echo("${env.full_name} building branch master")
+                echo("${job_env.full_name} building branch master")
                 args["branches"].add(["name": "*/master"])
             }
-            if (env.git.extensions != null) {
-                if (env.git.extensions.checkout_local_branch != null) {
-                    echo("${env.full_name} checking out local branch")
+            if (job_env.git.extensions != null) {
+                if (job_env.git.extensions.checkout_local_branch != null) {
+                    echo("${job_env.full_name} checking out local branch")
                     args["extensions"].add([$class: 'PruneStaleBranch'])
                     args["extensions"].add([$class: 'LocalBranch'])
                 }
-                if (env.git.extensions.shallow_clone != null) {
+                if (job_env.git.extensions.shallow_clone != null) {
                     args["extensions"].add([$class: 'CloneOption', shallow: true])
                 }
             }
             scmVars = checkout(args)
             // ['GIT_BRANCH':'origin/master', 'GIT_COMMIT':'8408762af61447e38a832513e595a518d81bf9af', 'GIT_PREVIOUS_COMMIT':'8408762af61447e38a832513e595a518d81bf9af', 'GIT_PREVIOUS_SUCCESSFUL_COMMIT':'dcea3f3567b7f55bc7a1a2f3d6752c084cc9b694', 'GIT_URL':'https://github.com/glance-/docker-goofys.git']
         }
-        if (env.copy_artifacts != null) {
+        if (job_env.copy_artifacts != null) {
             stage("Copy artifacts") {
-                echo("Copy artifacts from ${env.copy_artifacts.project_name} configured")
+                echo("Copy artifacts from ${job_env.copy_artifacts.project_name} configured")
                 def args = [
-                    projectName: env.copy_artifacts.project_name,
+                    projectName: job_env.copy_artifacts.project_name,
                     selector: lastSuccessful(),
                     fingerprintArtifacts: true,
                 ]
-                if (env.copy_artifacts.target_dir != null)
-                    args["target"] = env.copy_artifacts.target_dir
-                if (env.copy_artifacts.include != null)
-                    args["filter"] = env.copy_artifacts.include
-                if (env.copy_artifacts.exclude != null)
-                    excludePatterns(env.copy_artifacts.exclude.join(', '))
-                    args["excludes"] = env.copy_artifacts.exclude
-                if (env.copy_artifacts.flatten != null)
-                    args["flatten"] = env.copy_artifacts.flatten
-                if (env.copy_artifacts.optional != null)
-                    args["optional"] = env.copy_artifacts.optional
+                if (job_env.copy_artifacts.target_dir != null)
+                    args["target"] = job_env.copy_artifacts.target_dir
+                if (job_env.copy_artifacts.include != null)
+                    args["filter"] = job_env.copy_artifacts.include
+                if (job_env.copy_artifacts.exclude != null)
+                    excludePatterns(job_env.copy_artifacts.exclude.join(', '))
+                    args["excludes"] = job_env.copy_artifacts.exclude
+                if (job_env.copy_artifacts.flatten != null)
+                    args["flatten"] = job_env.copy_artifacts.flatten
+                if (job_env.copy_artifacts.optional != null)
+                    args["optional"] = job_env.copy_artifacts.optional
                 copyArtifacts(args)
             }
         }
-        if (env.pre_build_script != null) {
+        if (job_env.pre_build_script != null) {
             stage("Pre build script") {
-                sh(env.pre_build_script.join('\n'))
+                sh(job_env.pre_build_script.join('\n'))
                 echo('Pre-build script configured.')
             }
         }
-        if (!env.builders.disjoint(["script", "make", "python"])) {
+        if (!job_env.builders.disjoint(["script", "make", "python"])) {
             stage("build script/make/python") {
                 // Mutually exclusive builder steps
-                if (env.builders.contains("script")) {
+                if (job_env.builders.contains("script")) {
                     echo('Builder "script" configured.')
                     // This is expected to be run in the same shell,
                     // So enviorment-modifications carry over between lines in yaml.
-                    sh(env.script.join('\n'))
-                } else if (env.builders.contains("make")) {
+                    sh(job_env.script.join('\n'))
+                } else if (job_env.builders.contains("make")) {
                     echo('Builder "make" configured.')
                     sh("make clean && make && make test")
-                } else if (env.builders.contains("cmake")) {
+                } else if (job_env.builders.contains("cmake")) {
                     echo('Builder "cmake" configured.')
                     sh("/opt/builders/cmake")
-                } else if (env.builders.contains("python")) {
+                } else if (job_env.builders.contains("python")) {
                     echo('Builder "python" configured.')
-                    def python_module = env.name
-                    if (env.python_module != null) {
-                        python_module = env.python_module
+                    def python_module = job_env.name
+                    if (job_env.python_module != null) {
+                        python_module = job_env.python_module
                     }
-                    sh("/opt/builders/python ${python_module} ${env.python_source_directory}")
+                    sh("/opt/builders/python ${python_module} ${job_env.python_source_directory}")
                 }
             }
         }
-        if (env.builders.contains("docker")) {
+        if (job_env.builders.contains("docker")) {
             stage("build docker") {
-                if (_managed_script_enabled(env, 'docker_build_prep.sh')) {
+                if (_managed_script_enabled(job_env, 'docker_build_prep.sh')) {
                     echo("Managed script docker_build_prep.sh enabled.")
                     configFileProvider([configFile(fileId: 'docker_build_prep.sh', variable: 'DOCKER_BUILD_PREP')]) {
                         sh 'chmod +x "$DOCKER_BUILD_PREP" ; "$DOCKER_BUILD_PREP"'
                     }
                 }
-                tags = ["git-${scmVars.GIT_COMMIT[0..8]}", "ci-${env.name}-${BUILD_NUMBER}"]
-                if (env.docker_tags != null)
-                    tags.addAll(env.docker_tags)
+                tags = ["git-${scmVars.GIT_COMMIT[0..8]}", "ci-${job_env.name}-${BUILD_NUMBER}"]
+                if (job_env.docker_tags != null)
+                    tags.addAll(job_env.docker_tags)
 
-                if (_managed_script_enabled(env, 'docker_tag.sh')) {
+                if (_managed_script_enabled(job_env, 'docker_tag.sh')) {
                     echo("Managed script docker_tag.sh enabled.")
                     echo("Not using docker_tag.sh, having it done by dockerBuildAndPublish instead")
                     // docker_tag is buggy and trying to deterministically find a docker image
@@ -435,51 +432,51 @@ for (def extra_job in ${job_names.inspect()}) {
                     // so implement the same functionallity here.
                     tags.add("branch-${scmVars.GIT_BRANCH.replace('origin/', '')}")
                 }
-                if (!_get_bool(env.docker_skip_tag_as_latest, false))
+                if (!_get_bool(job_env.docker_skip_tag_as_latest, false))
                     tags.add("latest")
 
                 def full_names = []
                 for (def tag in tags)
-                    full_names.add("docker.sunet.se/${env.docker_name.replace("-/", "/")}:${tag}") // docker doesn't like glance-/repo, so mangle it to glance/repo
+                    full_names.add("docker.sunet.se/${job_env.docker_name.replace("-/", "/")}:${tag}") // docker doesn't like glance-/repo, so mangle it to glance/repo
 
                 def docker_build_and_publish = [
                     $class: 'DockerBuilderPublisher',
                     dockerFileDirectory: "",
                     tagsString: full_names.join("\n"),
-                    pushOnSuccess: !real_env.DEV_MODE?.toBoolean(), // Don't push in dev mode
+                    pushOnSuccess: !env.DEV_MODE?.toBoolean(), // Don't push in dev mode
                 ]
-                if (env.docker_context_dir != null)
-                    docker_build_and_publish["dockerFileDirectory"] = env.docker_context_dir
+                if (job_env.docker_context_dir != null)
+                    docker_build_and_publish["dockerFileDirectory"] = job_env.docker_context_dir
                 /* No corresponding functionallity in docker-plugin
                 dockerBuildAndPublish {
                     forcePull(false)
-                    noCache(_get_bool(env.docker_no_cache, true))
-                    forceTag(_get_bool(env.docker_force_tag, false))
-                    createFingerprints(_get_bool(env.docker_create_fingerprints, true))
+                    noCache(_get_bool(job_env.docker_no_cache, true))
+                    forceTag(_get_bool(job_env.docker_force_tag, false))
+                    createFingerprints(_get_bool(job_env.docker_create_fingerprints, true))
                 }*/
                 step(docker_build_and_publish)
                 echo('Builder "docker" configured.')
             }
         }
-        if (env.post_build_script != null) {
+        if (job_env.post_build_script != null) {
             stage("Post build script") {
-                sh(env.post_build_script.join('\n'))
+                sh(job_env.post_build_script.join('\n'))
                 echo('Post-build script configured.')
             }
         }
-        if (env.downstream != null && env.downstream.size() > 0) {
+        if (job_env.downstream != null && job_env.downstream.size() > 0) {
             stage("Triggering downstreams") {
-                echo("${env.full_name} using downstream ${env.downstream.join(', ')}")
-                for (def downstream in env.downstream) {
+                echo("${job_env.full_name} using downstream ${job_env.downstream.join(', ')}")
+                for (def downstream in job_env.downstream) {
                     build(job: downstream)
                 }
             }
         }
-        if (env.publish_over_ssh != null) {
+        if (job_env.publish_over_ssh != null) {
             stage("Publishing over ssh") {
-                for (def target in env.publish_over_ssh) {
+                for (def target in job_env.publish_over_ssh) {
                     if (target == 'pypi.sunet.se') {
-                        if (env.builders.contains("python") || env.builders.contains("script")) {
+                        if (job_env.builders.contains("python") || job_env.builders.contains("script")) {
                             echo("Publishing over ssh to ${target} enabled.")
                             sshPublisher(publishers: [sshPublisherDesc(
                                 configName: 'pypi.sunet.se',
@@ -495,27 +492,27 @@ for (def extra_job in ${job_names.inspect()}) {
                 }
             }
         }
-        if (env.archive_artifacts != null) {
+        if (job_env.archive_artifacts != null) {
             // Save artifacts for use in another project
             stage("Archiving artifacts") {
-                echo("${env.full_name} using artifact archiver for ${env.archive_artifacts.include}")
+                echo("${job_env.full_name} using artifact archiver for ${job_env.archive_artifacts.include}")
                 def args = [
-                    "includes": env.archive_artifacts.include
+                    "includes": job_env.archive_artifacts.include
                 ]
-                if (env.archive_artifacts.exclude != null) {
-                    args["excludes"] = env.archive_artifacts.exclude
+                if (job_env.archive_artifacts.exclude != null) {
+                    args["excludes"] = job_env.archive_artifacts.exclude
                 }
                 archive(args)
             }
         }
     } finally {
-        if (_slack_enabled(env) && !real_env.DEV_MODE?.toBoolean()) {
-            echo("${env.full_name} using Slack notification to: ${env.slack.room}")
+        if (_slack_enabled(job_env) && !env.DEV_MODE?.toBoolean()) {
+            echo("${job_env.full_name} using Slack notification to: ${job_env.slack.room}")
             //slackSend "Build failed: - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
-            slackSend(channel: env.slack.room, message: env.slack.custom_message, tokenCredentialId: 'SLACK_TOKEN', username: env.slack.sendas)
+            slackSend(channel: job_env.slack.room, message: job_env.slack.custom_message, tokenCredentialId: 'SLACK_TOKEN', username: job_env.slack.sendas)
         }
-        if (env.jabber != null) {
-            echo("${env.full_name} using Jabber notification to: ${env.jabber}")
+        if (job_env.jabber != null) {
+            echo("${job_env.full_name} using Jabber notification to: ${job_env.jabber}")
             echo "No jabber plugin loaded"
         }
     }
@@ -523,10 +520,10 @@ for (def extra_job in ${job_names.inspect()}) {
 
 if (docker_image) {
     dockerNode(image: docker_image) {
-        runJob(env)
+        runJob(job_env)
     }
 } else {
     node() {
-        runJob(env)
+        runJob(job_env)
     }
 }
