@@ -522,12 +522,14 @@ for (def extra_job in ${job_names.inspect()}) {
     }
 }
 
-if (docker_image) {
-    dockerNode(image: docker_image) {
-        runJob(job_env)
-    }
-} else {
-    node() {
-        runJob(job_env)
+ansiColor('xterm') {
+    if (docker_image) {
+        dockerNode(image: docker_image) {
+            runJob(job_env)
+        }
+    } else {
+        node() {
+            runJob(job_env)
+        }
     }
 }
