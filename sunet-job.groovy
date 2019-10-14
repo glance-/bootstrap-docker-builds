@@ -219,7 +219,9 @@ if (env.DEV_MODE?.toBoolean())
 def property_list = []
 def docker_image = null
 if (_build_in_docker(job_env)) {
-    if (job_env.build_in_docker.image != null) {
+    if (job_env.build_in_docker.image == "docker.sunet.se/sunet/docker-jenkins-job") {
+        echo("Not specifically buidling in docker, because our image is docker.sunet.se/sunet/docker-jenkins-job")
+    } else if (job_env.build_in_docker.image != null) {
         echo("${job_env.full_name} building in docker image ${job_env.build_in_docker.image}")
         docker_image = job_env.build_in_docker.image
     } else if (job_env.build_in_docker.dockerfile != null) {
