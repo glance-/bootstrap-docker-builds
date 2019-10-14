@@ -472,7 +472,7 @@ for (def extra_job in ${job_names.inspect()}) {
             stage("Triggering downstreams") {
                 echo("${job_env.full_name} using downstream ${job_env.downstream.join(', ')}")
                 for (def downstream in job_env.downstream) {
-                    build(job: downstream)
+                    build(job: downstream, wait: false)
                 }
             }
         }
