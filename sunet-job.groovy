@@ -501,12 +501,12 @@ for (def extra_job in ${job_names.inspect()}) {
             stage("Archiving artifacts") {
                 echo("${job_env.full_name} using artifact archiver for ${job_env.archive_artifacts.include}")
                 def args = [
-                    "includes": job_env.archive_artifacts.include
+                    "artifacts": job_env.archive_artifacts.include
                 ]
                 if (job_env.archive_artifacts.exclude != null) {
                     args["excludes"] = job_env.archive_artifacts.exclude
                 }
-                archive(args)
+                archiveArtifacts(args)
             }
         }
     } finally {
