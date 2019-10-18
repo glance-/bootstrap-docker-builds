@@ -288,11 +288,11 @@ def add_job(env, is_dev_mode) {
                 }
             }
             publishers {
-                if (_slack_enabled(env) && "${SLACK_TOKEN}" != "") {
+                if (_slack_enabled(env)) {
                     out.println("${env.full_name} using Slack notification to: ${env.slack.room}")
                     slackNotifier {
                         teamDomain('SUNET')
-                        authToken("${SLACK_TOKEN}".toString())
+                        tokenCredentialId('SLACK_TOKEN')
                         room(env.slack.room)
                         notifyAborted(true)
                         notifyFailure(true)
