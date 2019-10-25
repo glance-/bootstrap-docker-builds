@@ -7,10 +7,9 @@ import java.io.FileNotFoundException
 import java.io.IOException
 
 // Used for merging .jenkins.yaml in to default env
-Map.metaClass.addNested = { Map rhs ->
-    def lhs = delegate
-    rhs.each { k, v -> lhs[k] = lhs[k] in Map ? lhs[k].addNested(v) : v }
-    lhs
+def addNested(lhs, rhs) {
+    rhs.each { k, v -> lhs[k] = lhs[k] in Map ? addNested(lhs[k], v) : v }
+    return lhs
 }
 
 // https://stackoverflow.com/questions/7087185/retry-after-exception-in-groovy
@@ -113,7 +112,7 @@ def load_env(repo) {
         if (yaml_text != fixed_yaml_text)
             out.println("FIXME: This repo contains non compliant yaml")
         def repo_env = new Yaml().load(fixed_yaml_text)
-        env.addNested(repo_env)
+        env = addNested(env, repo_env)
     } catch (FileNotFoundException ex) {
         out.println("No .jenkins.yaml for ${env.full_name}... will use defaults")
     }
@@ -187,9 +186,56 @@ def load_env(repo) {
 def add_job(env, is_dev_mode) {
     if (env.builders.size() > 0 && !_is_disabled(env)) {
         out.println("generating job for ${env.full_name} using builders: ${env.builders}")
+
+
         job(env.name) {
             properties {
                 githubProjectUrl("https://github.com/${env.repo_full_name}")
+                // Build in docker
+                if (_build_in_docker(env)) {
+                    dockerJobTemplateProperty {
+                        cloudname("")  // Empty means pick one.
+                        template {
+                            // Name the container after what we build in it
+                            name("docker-${env.full_name}")
+                            pullStrategy(is_dev_mode ? "PULL_NEVER" : (env.build_in_docker.force_pull ? "PULL_ALWAYS" : "PULL_LATEST") )
+                            // Connect as whatever the template tries to run as
+                            connector {
+                                attach {
+                                    user("")
+                                }
+                            }
+                            labelString('')
+                            // TODO: Implement verbose?
+                            //verbose(_get_bool(env.build_in_docker.verbose, false))
+                            // Let global limit handle this
+                            instanceCapStr('0')
+                            dockerTemplateBase {
+                                dockerTemplateBase {
+                                    // Enable docker in docker
+                                    volumesString(
+                                        '/usr/bin/docker:/usr/bin/docker:ro\n' +
+                                        '/var/run/docker.sock:/var/run/docker.sock'
+                                    )
+                                    dockerCommand(env.build_in_docker.start_command)
+                                    tty(true)
+                                    if (env.build_in_docker.image != null) {
+                                        out.println("${env.full_name} building in docker image ${env.build_in_docker.image}")
+                                        image(env.build_in_docker.image)
+                                    } else if (env.build_in_docker.dockerfile != null) {
+                                        out.println("${env.full_name} building in docker image from Dockerfile ${env.build_in_docker.dockerfile}")
+                                        // FIXME!
+                                        // pkcs11-proxy is the only one using this.
+                                        // This can be done in pipeline, but in docker-cloud?
+                                        //dockerfile('.', env.build_in_docker.dockerfile)
+                                        out.println("Doesn't support Dockerfile yet, so use the regular image for now")
+                                        image("docker.sunet.se/sunet/docker-jenkins-job")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             scm {
                 git {
@@ -242,11 +288,11 @@ def add_job(env, is_dev_mode) {
                 }
             }
             publishers {
-                if (_slack_enabled(env) && "${SLACK_TOKEN}" != "") {
+                if (_slack_enabled(env)) {
                     out.println("${env.full_name} using Slack notification to: ${env.slack.room}")
                     slackNotifier {
                         teamDomain('SUNET')
-                        authToken("${SLACK_TOKEN}".toString())
+                        tokenCredentialId('SLACK_TOKEN')
                         room(env.slack.room)
                         notifyAborted(true)
                         notifyFailure(true)
@@ -307,9 +353,7 @@ def add_job(env, is_dev_mode) {
                     }
                 }
             }
-
             wrappers {
-                build_in_docker = _build_in_docker(env)
                 // Clean workspace
                 if (_get_bool(env.clean_workspace, false)) {
                     preBuildCleanup()
@@ -317,24 +361,6 @@ def add_job(env, is_dev_mode) {
                 if (env.environment_variables != null) {
                     environmentVariables {
                         envs(env.environment_variables)
-                    }
-                }
-                // Build in docker
-                if (build_in_docker) {
-                    buildInDocker {
-                        forcePull(is_dev_mode ? false : _get_bool(env.build_in_docker.force_pull, true))
-                        verbose(_get_bool(env.build_in_docker.verbose, false))
-                        // Enable docker in docker
-                        volume('/usr/bin/docker', '/usr/bin/docker')
-                        volume('/var/run/docker.sock', '/var/run/docker.sock')
-                        startCommand(env.build_in_docker.start_command)
-                        if (env.build_in_docker.image != null) {
-                            out.println("${env.full_name} building in docker image ${env.build_in_docker.image}")
-                            image(env.build_in_docker.image)
-                        } else if (env.build_in_docker.dockerfile != null) {
-                            out.println("${env.full_name} building in docker image from Dockerfile ${env.build_in_docker.dockerfile}")
-                            dockerfile('.', env.build_in_docker.dockerfile)
-                        }
                     }
                 }
             }
@@ -405,19 +431,33 @@ def add_job(env, is_dev_mode) {
                         // so implement the same functionallity here.
                         tags.add("branch-\${GIT_BRANCH#origin/}")
                     }
-                    dockerBuildAndPublish {
-                        repositoryName(env.docker_name)
-                        if (env.docker_context_dir != null) {
-                            buildContext(env.docker_context_dir)
+                    if (!_get_bool(env.docker_skip_tag_as_latest, false))
+                        tags.add("latest")
+
+                    def full_names = []
+                    for (tag in tags)
+                        full_names.add("docker.sunet.se/${env.docker_name.replace("-/", "/")}:${tag}") // docker doesn't like glance-/repo, so mangle it to glance/repo
+
+                    dockerBuilderPublisher {
+                        dockerFileDirectory(env.docker_context_dir != null ? env.docker_context_dir : "")
+                        tagsString(full_names.join("\n"))
+                        pushOnSuccess(!is_dev_mode)
+                        cloud("") // Use the current jobs cloud.
+                        // Override where to pull from, and what credentials to use.
+                        fromRegistry {
+                            url('')
+                            credentialsId('')
                         }
-                        dockerRegistryURL("https://docker.sunet.se")
-                        tag(tags.join(","))
+                        pushCredentialsId('')
+                        cleanImages(true)
+                        cleanupWithJenkinsJobDelete(true)
+                    }
+                    /* TODO: things not implemented in docker-plugin
                         forcePull(is_dev_mode ? false : _get_bool(env.docker_force_pull, true))
                         noCache(_get_bool(env.docker_no_cache, true))
                         forceTag(_get_bool(env.docker_force_tag, false))
                         createFingerprints(_get_bool(env.docker_create_fingerprints, true))
-                        skipTagAsLatest(_get_bool(env.docker_skip_tag_as_latest, false))
-                    }
+                    */
                     out.println('Builder "docker" configured.')
                 }
                 // Post-build script
@@ -457,6 +497,8 @@ if (binding.hasVariable("DEV_MODE") && "${DEV_MODE}" != "" && DEV_MODE.toBoolean
     out.println("DEV_MODE detected, will act accordingly")
     is_dev_mode = true
 }
+
+def failure_in_repos = false
 
 for (org in orgs) {
     //TODO: Should we set a per_page=100 (100 is max) to decrese the number of api calls,
@@ -522,6 +564,7 @@ for (org in orgs) {
                     out.println(ex.toString());
                     out.println(ex.getMessage());
                     out.println("---- Trying next repo ----")
+                    failure_in_repos = true
                 }
             }
         }
@@ -623,3 +666,6 @@ listView("se-leg") {
         buildButton()
     }
 }
+
+if (failure_in_repos)
+    SEED_JOB.getLastBuild().setResult(hudson.model.Result.UNSTABLE)
