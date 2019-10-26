@@ -183,6 +183,19 @@ def load_env(repo) {
     return env
 }
 
+// No def, global
+docker_cloud_name = null
+for (def cloud : jenkins.model.Jenkins.getInstance().clouds) {
+    // job-dsl can't access plugin classes, so just compare it as a string
+    // instead of using instanceof
+    if (cloud.getClass().toString() == 'class com.nirima.jenkins.plugins.docker.DockerCloud') {
+        docker_cloud_name = cloud.name
+        break;
+    }
+}
+if (!docker_cloud_name)
+    throw new Exception("Can't find a docker cloud to run containers on!")
+
 def add_job(env, is_dev_mode) {
     if (env.builders.size() > 0 && !_is_disabled(env)) {
         out.println("generating job for ${env.full_name} using builders: ${env.builders}")
@@ -194,7 +207,7 @@ def add_job(env, is_dev_mode) {
                 // Build in docker
                 if (_build_in_docker(env)) {
                     dockerJobTemplateProperty {
-                        cloudname("")  // Empty means pick one.
+                        cloudname(docker_cloud_name)
                         template {
                             // Name the container after what we build in it
                             name("docker-${env.full_name}")
