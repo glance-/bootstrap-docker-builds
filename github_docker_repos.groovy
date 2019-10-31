@@ -318,12 +318,6 @@ def add_job(env, is_dev_mode) {
                         sendAs(env.slack.sendas)
                     }
                 }
-                if (env.jabber != null) {
-                    out.println("${env.full_name} using Jabber notification to: ${env.jabber}")
-                    publishJabber(env.jabber) {
-                        strategyName('ANY_FAILURE')
-                    }
-                }
                 if (env.downstream != null && env.downstream.size() > 0) {
                     out.println("${env.full_name} using downstream ${env.downstream.join(', ')}")
                     downstream(env.downstream.join(', '))

@@ -84,8 +84,6 @@ slack:
   room: "devops"
   custom_message: ~
   sendas: ~
-# Jabber room to send updates to
-jabber: ~
 
 # Save artifacts from successful builds
 archive_artifacts:
