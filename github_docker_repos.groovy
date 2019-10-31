@@ -96,6 +96,7 @@ def load_env(repo) {
         'slack'                  : ['room': 'devops-builds', 'disabled': false],
         'triggers'               : [:],
         'builders'               : [],
+        'docker_name'            : repo.full_name.toLowerCase(),
         'build_in_docker'        : [
             'disabled': false,
             'dockerfile': null,
@@ -133,11 +134,6 @@ def load_env(repo) {
             if (!env.name.equals("bootstrap-docker-builds") && try_get_file(_repo_file(env.repo_full_name, "master", "Dockerfile"))) {
                 out.println("Found Dockerfile for ${env.full_name}. Adding \"docker\" to builders.")
                 env.builders += "docker"
-            }
-
-            if (env.docker_name == null) {
-                out.println("No docker_name set. Using ${env.full_name}.")
-                env.docker_name = env.full_name
             }
         } catch (FileNotFoundException ex) { }
 
