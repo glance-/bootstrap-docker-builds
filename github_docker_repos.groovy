@@ -543,12 +543,12 @@ for (org in orgs) {
             }
 
             repos.each {
-                if (ONLY_REPOS && !ONLY_REPOS.contains(it.name))
+                def name = it.name
+                def full_name = it.full_name.toLowerCase()
+                if (ONLY_REPOS && !ONLY_REPOS.contains(name))
                     return // return is like continue in a closure
-                out.println("repo: ${it.name}")
+                out.println("repo: ${name}")
                 try {
-                    def name = it.name
-                    def full_name = it.full_name.toLowerCase()
                     if (name != null && full_name != null && name != "null" && full_name != "null") {
                         env = load_env(it)
                         add_job(env, is_dev_mode)
@@ -563,7 +563,7 @@ for (org in orgs) {
                     }
                     out.println("---- EOJ ----")
                 } catch (RuntimeException ex) {
-                    out.println("---- Failed to process ${it.name} ----")
+                    out.println("---- Failed to process ${name} ----")
                     out.println(ex.toString());
                     out.println(ex.getMessage());
                     out.println("---- Trying next repo ----")
