@@ -5,6 +5,7 @@ import org.yaml.snakeyaml.Yaml
 //import groovy.yaml.YamlSlurper
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.security.SignatureException
 
 // Used for merging .jenkins.yaml in to default env
 def addNested(lhs, rhs) {
@@ -90,12 +91,17 @@ def _get_int(value, default_value) {
     return default_value.toInteger()
 }
 
+
+repo_must_be_signed = [:].withDefault{ false }
+
+
 def load_env(repo) {
     // Default environment
     def env = [
         'name'                   : repo.name,
         'full_name'              : repo.full_name.toLowerCase(),
         'repo_full_name'         : repo.full_name, // Jenkins is not case insensitive with push notifications
+        'repo_must_be_sighed'    : repo_must_be_signed[repo.full_name],
         'disabled'               : false,
         'git'                    : [:],
         'python_source_directory': 'src',
@@ -113,6 +119,10 @@ def load_env(repo) {
 
     // Load enviroment variables from repo yaml file
     try {
+        // Check if github says the branch is signed before reading .jenkins.yaml from it.
+        if (repo_must_be_signed[env.repo_full_name] && !is_github_branch_signed(env.repo_full_name, "master")) {
+            throw new SignatureException("Repo not SIGNED!")
+        }
         def yaml_text = try_get_file(_repo_file(env.repo_full_name, "master", ".jenkins.yaml"))
         // Mangle broken yaml into something a propper yaml parser stands
         def fixed_yaml_text = yaml_text.replaceAll('cron: (@\\w+)', 'cron: "$1"')
@@ -185,6 +195,15 @@ def load_env(repo) {
     return env
 }
 
+def is_github_branch_signed(repo_full_name, branch) {
+    def js = new JsonSlurper()
+    def ref = try_get_file("https://api.github.com/repos/${repo_full_name}/git/ref/heads/${branch}")
+    ref = js.parseText(ref)
+    def commit = try_get_file(ref["object"]["url"])
+    commit = js.parseText(commit)
+    return commit["verification"]["verified"]
+}
+
 // No def, global
 docker_cloud_name = null
 for (def cloud : jenkins.model.Jenkins.getInstance().clouds) {
@@ -204,6 +223,8 @@ def add_job(env, is_dev_mode) {
 
 
         job(env.name) {
+            // Clear any description
+            description("")
             properties {
                 githubProjectUrl("https://github.com/${env.repo_full_name}")
                 // Build in docker
@@ -372,8 +393,25 @@ def add_job(env, is_dev_mode) {
                         envs(env.environment_variables)
                     }
                 }
+                if (env.repo_must_be_sighed) {
+                    // Provision stuff to check signature as first step in job.
+                    credentialsBinding {
+                        // Provision our keyring to validate against as a file on the agent
+                        file('GNUPG_KEYRING', 'GNUPG_KEYRING')
+                    }
+                    configFiles {
+                        // And provision our gpg-wrapper to use the keyring GNUPG_KEYRING
+                        custom('GPG_WRAPPER') {
+                            variable('GPG_WRAPPER')
+                        }
+                    }
+                }
             }
             steps {
+                if (env.repo_must_be_sighed) {
+                    // Only run code which we can validate
+                    shell('chmod +x "$GPG_WRAPPER" && git -c "gpg.program=$GPG_WRAPPER" verify-commit HEAD')
+                }
                 // Copy artifacts from another project
                 if (env.copy_artifacts != null) {
                     out.println("Copy artifacts from ${env.copy_artifacts.project_name} configured")
@@ -570,6 +608,17 @@ for (org in orgs) {
                         }
                     }
                     out.println("---- EOJ ----")
+                } catch (SignatureException ex) {
+                    out.println("---- ${ex} - disabling job ${name} ----")
+                    // Repo was flagged repo_must_be_signed, but signature verification failed.
+                    // Disable job and do not update it if github doesn't think its signed
+                    job(name) {
+                        disabled()
+                        description("Disabled due to ${ex}")
+                        // Keep the rest of the configuration
+                        using(name)
+                    }
+                    failure_in_repos = true
                 } catch (RuntimeException ex) {
                     out.println("---- Failed to process ${name} ----")
                     out.println(ex.toString());
