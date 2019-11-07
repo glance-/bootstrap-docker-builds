@@ -522,7 +522,7 @@ for (org in orgs) {
             // So you don't run into the request api request limit as quickly...
             //conn.addRequestProperty("Authorization", "token XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 
-            repos = new JsonSlurper().parse(conn.getInputStream())
+            def repos = new JsonSlurper().parse(conn.getInputStream())
 
             // Terminate loop if we can't find a next link
             next_path = null
