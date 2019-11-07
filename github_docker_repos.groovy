@@ -565,7 +565,6 @@ for (org in orgs) {
                 } catch (RuntimeException ex) {
                     out.println("---- Failed to process ${name} ----")
                     out.println(ex.toString());
-                    out.println(ex.getMessage());
                     org.codehaus.groovy.runtime.StackTraceUtils.printSanitizedStackTrace(ex)
                     out.println("---- Trying next repo ----")
                     failure_in_repos = true
