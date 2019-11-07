@@ -30,7 +30,13 @@ def retry_get_file(int times = 5, Closure errorHandler = {e-> out.println(e.mess
 
 def try_get_file(url) {
     retry_get_file(10) {
-        return url.toURL().getText()
+        if (!(url instanceof URL))
+            url = url.toURL()
+        def conn = url.openConnection()
+        // So you don't run into the request api request limit as quickly...
+        if (binding.hasVariable("GITHUB_TOKEN") && "${GITHUB_TOKEN}" != "" && url.getHost() == 'api.github.com')
+            conn.addRequestProperty("Authorization", "token ${GITHUB_TOKEN}")
+        return conn.getInputStream().getText()
     }
 }
 
@@ -516,11 +522,13 @@ for (org in orgs) {
     }
     try {
         while (next_path != null) {
+            // No, we can't use try_get_file here, because we need headers for links
             def url = new URL(api + next_path)
             def conn = url.openConnection()
             // This way you can add your own github auth token via https://github.com/settings/tokens
             // So you don't run into the request api request limit as quickly...
-            //conn.addRequestProperty("Authorization", "token XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+            if (binding.hasVariable("GITHUB_TOKEN") && "${GITHUB_TOKEN}" != "")
+                conn.addRequestProperty("Authorization", "token ${GITHUB_TOKEN}")
 
             def repos = new JsonSlurper().parse(conn.getInputStream())
 
