@@ -94,6 +94,7 @@ def _get_int(value, default_value) {
 
 repo_must_be_signed = [:].withDefault{ false }
 repo_must_be_signed["SUNET/docker-jenkins"] = true
+repo_must_be_signed["SUNET/docker-jenkins-job"] = true
 
 
 def load_env(repo) {
